@@ -6,3 +6,6 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Unrelated Google Apps Script kept locally
+create-company-form.gs
