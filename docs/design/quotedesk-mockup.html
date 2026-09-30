@@ -1,0 +1,787 @@
+<title>QuoteDesk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fixed navy rail on the left (unchanged from the prototype), light working surface on the right.
+   Dashboard leads with what needs action; metrics come second. Money is always tabular, identifiers always mono. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --line: #e3e8ef;
+  --line-strong: #cbd3de;
+  --fg: #14213a;
+  --fg-2: #46526a;
+  --fg-3: #66718a;
+  --accent: #e8642a;
+  --accent-fg: #ffffff;
+  --accent-soft: #fdeee5;
+  --accent-ink: #b8461a;
+  --nav: #0f2137;
+  --nav-2: #16304d;
+  --nav-fg: #b9c6d8;
+  --nav-fg-strong: #ffffff;
+  --good: #1a7f4b;      --good-bg: #e4f5ea;
+  --warn: #9a6b0b;      --warn-bg: #fdf3d7;
+  --crit: #bf2e2e;      --crit-bg: #fde8e8;
+  --info: #2a62a8;      --info-bg: #e6eefb;
+  --neutral: #5b6578;   --neutral-bg: #eef1f5;
+  --shadow: 0 1px 2px rgba(20,33,58,.06), 0 1px 0 rgba(20,33,58,.03);
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1320; --surface: #151c2a; --surface-2: #1a2333; --line: #27324a; --line-strong: #364461;
+    --fg: #e7ecf4; --fg-2: #b3bdcd; --fg-3: #8893a8;
+    --accent: #f2804a; --accent-fg: #1a0e07; --accent-soft: #3a2113; --accent-ink: #ffb58c;
+    --nav: #0a1424; --nav-2: #142440; --nav-fg: #9fb0c8; --nav-fg-strong: #ffffff;
+    --good: #5ed08c; --good-bg: #14301f; --warn: #f0c35a; --warn-bg: #3a2d0f;
+    --crit: #f08080; --crit-bg: #3d1717; --info: #7fb0f0; --info-bg: #17284a;
+    --neutral: #aab3c4; --neutral-bg: #232c3e;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1320; --surface: #151c2a; --surface-2: #1a2333; --line: #27324a; --line-strong: #364461;
+  --fg: #e7ecf4; --fg-2: #b3bdcd; --fg-3: #8893a8;
+  --accent: #f2804a; --accent-fg: #1a0e07; --accent-soft: #3a2113; --accent-ink: #ffb58c;
+  --nav: #0a1424; --nav-2: #142440; --nav-fg: #9fb0c8; --nav-fg-strong: #ffffff;
+  --good: #5ed08c; --good-bg: #14301f; --warn: #f0c35a; --warn-bg: #3a2d0f;
+  --crit: #f08080; --crit-bg: #3d1717; --info: #7fb0f0; --info-bg: #17284a;
+  --neutral: #aab3c4; --neutral-bg: #232c3e;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--fg-3); }
+.sub { color: var(--fg-2); }
+
+/* ---------- Shell ---------- */
+.app { display: grid; grid-template-columns: 236px 1fr; min-height: 100%; }
+.nav { background: var(--nav); color: var(--nav-fg); display: flex; flex-direction: column; padding: 14px 12px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; color: var(--nav-fg-strong); font-weight: 600; font-size: 15px; }
+.brand .mark { width: 30px; height: 30px; border-radius: 7px; background: var(--accent); display: grid; place-items: center; color: #fff; }
+.nav-label { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--nav-fg); opacity: .7; padding: 8px 12px 6px; }
+.nav a.item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--nav-fg); font-weight: 500; }
+.nav a.item:hover { background: var(--nav-2); color: var(--nav-fg-strong); }
+.nav a.item[aria-current="page"] { background: var(--nav-2); color: var(--nav-fg-strong); }
+.nav a.item svg { flex: none; opacity: .85; }
+.nav .count { margin-left: auto; font-family: var(--mono); font-size: 11px; background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 7px; }
+.nav .spacer { flex: 1; }
+.sys { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; margin-top: 10px; }
+.sys .row { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 12px; }
+.sys .dot { width: 7px; height: 7px; border-radius: 50%; background: #3ecf7a; flex: none; }
+.sys .dot.warn { background: #f0c35a; }
+.sys .when { margin-left: auto; font-family: var(--mono); font-size: 11px; opacity: .6; }
+
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; gap: 14px; padding: 12px 28px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.topbar h1 { font-size: 15px; font-weight: 600; margin: 0; }
+.chip { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--neutral-bg); color: var(--neutral); font-weight: 500; }
+.topbar .right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.topbar .link { color: var(--fg-2); text-decoration: none; font-size: 13px; }
+.user { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--nav-2); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; letter-spacing: .02em; flex: none; }
+.avatar.sm { width: 22px; height: 22px; font-size: 10px; }
+.content { padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px; }
+.view[hidden] { display: none; }
+
+/* ---------- Primitives ---------- */
+.page-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.page-head h2 { margin: 0; font-size: 20px; font-weight: 600; text-wrap: balance; }
+.page-head p { margin: 4px 0 0; color: var(--fg-2); max-width: 64ch; }
+.page-head .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn.primary:hover { filter: brightness(.95); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--fg-2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+.card-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.card-h .chip { margin-left: 6px; }
+.card-h .more { margin-left: auto; font-size: 12.5px; color: var(--fg-3); text-decoration: none; font-weight: 500; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.draft    { background: var(--neutral-bg); color: var(--neutral); }
+.pill.approval { background: var(--warn-bg); color: var(--warn); }
+.pill.sent     { background: var(--info-bg); color: var(--info); }
+.pill.won      { background: var(--good-bg); color: var(--good); }
+.pill.lost     { background: var(--crit-bg); color: var(--crit); }
+.pill.expired  { background: var(--warn-bg); color: var(--warn); }
+.pill.cancelled{ background: var(--neutral-bg); color: var(--fg-3); }
+.pill.active   { background: var(--good-bg); color: var(--good); }
+.pill.nrnd     { background: var(--warn-bg); color: var(--warn); }
+.pill.obsolete { background: var(--crit-bg); color: var(--crit); }
+.pill.plain::before { display: none; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--fg-3); font-weight: 600; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tbody tr.row:hover { background: var(--surface-2); cursor: pointer; }
+th.r, td.r { text-align: right; }
+td .two { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+td .two small { color: var(--fg-3); font-size: 12px; }
+.qn { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--fg); }
+.qn .rev { color: var(--accent-ink); }
+.money { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.money .ccy { color: var(--fg-3); font-size: 11px; margin-left: 3px; }
+.margin { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.margin.low { color: var(--crit); }
+.margin.ok { color: var(--good); }
+.margin.mid { color: var(--warn); }
+.age { white-space: nowrap; }
+.age.urgent { color: var(--crit); font-weight: 500; }
+.age.soon { color: var(--warn); font-weight: 500; }
+.owner { display: inline-flex; align-items: center; gap: 7px; }
+.faded td { color: var(--fg-3); }
+
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.search { flex: 1 1 260px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 10px; background: var(--surface); min-width: 0; }
+.search input { border: 0; background: transparent; color: var(--fg); flex: 1; min-width: 0; font: inherit; }
+.search input::placeholder { color: var(--fg-3); }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 11px; color: var(--fg-2); cursor: pointer; font-weight: 500; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--surface); }
+.seg .n { font-family: var(--mono); font-size: 11px; opacity: .8; }
+select.sel { border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 6px 10px; font: inherit; }
+.table-foot { padding: 10px 14px; font-size: 12.5px; color: var(--fg-3); border-top: 1px solid var(--line); display: flex; gap: 12px; align-items: center; }
+.table-foot button { border: 0; background: none; color: var(--accent-ink); font-weight: 500; cursor: pointer; padding: 0; }
+
+/* ---------- Dashboard ---------- */
+.attn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.attn .card-h { font-size: 13.5px; }
+.attn .card-h .n { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--fg-3); }
+.attn .card-h.hot .n { color: var(--crit); }
+.attn ul { list-style: none; margin: 0; padding: 4px 0; }
+.attn li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 16px; border-top: 1px solid var(--line); cursor: pointer; }
+.attn li:first-child { border-top: 0; }
+.attn li:hover { background: var(--surface-2); }
+.attn li .who { color: var(--fg-2); font-size: 12.5px; grid-column: 1; }
+.attn li .why { grid-column: 1 / -1; font-size: 12px; color: var(--fg-3); display: flex; gap: 8px; align-items: center; }
+.attn li .why b { color: var(--fg-2); font-weight: 500; }
+.attn .empty { padding: 18px 16px; color: var(--fg-3); font-size: 13px; }
+
+.metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.tile { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.tile .l { font-size: 12.5px; color: var(--fg-2); display: flex; justify-content: space-between; align-items: center; }
+.tile .v { font-family: var(--mono); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tile .v small { font-size: 12px; color: var(--fg-3); font-family: var(--sans); font-weight: 400; margin-left: 4px; }
+.tile .d { font-size: 12px; color: var(--fg-3); display: flex; gap: 8px; flex-wrap: wrap; }
+.tile .d .up { color: var(--good); }
+.tile .d .down { color: var(--crit); }
+.tile svg.spark { width: 100%; height: 34px; margin-top: 2px; }
+.split { display: grid; grid-template-columns: 5fr 7fr; gap: 14px; }
+
+/* ---------- Quote editor ---------- */
+.qhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qhead .back { color: var(--fg-3); text-decoration: none; font-size: 13px; }
+.qhead h2 { margin: 0; font-family: var(--mono); font-size: 18px; font-weight: 500; }
+.qhead .ver { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; font-size: 12.5px; }
+.qhead .ver span { padding: 4px 10px; color: var(--fg-2); }
+.qhead .ver span + span { border-left: 1px solid var(--line); }
+.qhead .ver span.cur { background: var(--accent-soft); color: var(--accent-ink); font-weight: 500; }
+.qhead .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+.meta > div { padding: 12px 16px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+.meta > div:nth-child(4n) { border-right: 0; }
+.meta > div:nth-last-child(-n+4) { border-bottom: 0; }
+.meta .k { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--fg-3); font-weight: 600; margin-bottom: 4px; }
+.meta .v { font-weight: 500; }
+.meta .v small { display: block; font-weight: 400; color: var(--fg-3); font-size: 12px; margin-top: 2px; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+.lines td { padding: 8px 10px; }
+.lines th { padding: 9px 10px; }
+.lines td.idx { color: var(--fg-3); font-family: var(--mono); font-size: 12px; width: 28px; }
+.lines .desc { color: var(--fg-2); font-size: 12.5px; }
+.lines input.cell { width: 76px; border: 1px solid transparent; background: transparent; color: var(--fg); font: inherit; font-family: var(--mono); font-size: 13px; text-align: right; padding: 4px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.lines input.cell:hover { border-color: var(--line-strong); }
+.lines input.cell:focus { border-color: var(--accent); background: var(--surface); outline: 0; }
+.lines input.cell.bad { color: var(--crit); border-color: var(--crit); }
+.src { display: inline-block; font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: var(--neutral-bg); color: var(--neutral); font-weight: 500; letter-spacing: .02em; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+.src.contract { background: var(--info-bg); color: var(--info); }
+.src.vol { background: var(--good-bg); color: var(--good); }
+.lines tr.freight td { background: var(--surface-2); color: var(--fg-2); }
+.lines .addrow td { padding: 10px; }
+.lines .addrow button { border: 1px dashed var(--line-strong); background: transparent; color: var(--fg-2); border-radius: 6px; padding: 7px 12px; cursor: pointer; width: 100%; text-align: left; }
+.lines .addrow button:hover { border-color: var(--accent); color: var(--accent-ink); }
+.summary { padding: 6px 0 0; }
+.summary .r { display: flex; justify-content: space-between; padding: 7px 16px; font-size: 13.5px; }
+.summary .r.total { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 12px; font-weight: 600; font-size: 15px; }
+.summary .r.margin { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 10px; }
+.summary .r .money { font-size: 13.5px; }
+.summary .r.total .money { font-size: 16px; }
+.banner { margin: 12px 12px 0; border-radius: 6px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; border: 1px solid; }
+.banner.warn { background: var(--warn-bg); border-color: transparent; color: var(--fg); }
+.banner.warn b { color: var(--warn); }
+.banner.ok { background: var(--good-bg); border-color: transparent; color: var(--fg); }
+.banner.ok b { color: var(--good); }
+.banner ul { margin: 6px 0 0; padding-left: 16px; }
+.summary .cta { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.summary .cta .btn { justify-content: center; }
+.timeline { list-style: none; margin: 0; padding: 6px 16px 10px; }
+.timeline li { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; padding: 8px 0; align-items: start; font-size: 13px; }
+.timeline li + li { border-top: 1px solid var(--line); }
+.timeline .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); margin-top: 6px; margin-left: 4px; }
+.timeline .dot.info { background: var(--info); }
+.timeline .dot.good { background: var(--good); }
+.timeline .t { color: var(--fg-3); font-size: 12px; white-space: nowrap; }
+
+/* ---------- Imports ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 10px 14px; color: var(--fg-2); font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; gap: 7px; align-items: center; }
+.tabs button[aria-selected="true"] { color: var(--accent-ink); border-bottom-color: var(--accent); }
+.steps { display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-wrap: wrap; }
+.steps .s { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--fg-3); padding: 4px 10px; border-radius: 6px; }
+.steps .s .n { font-family: var(--mono); font-size: 11.5px; }
+.steps .s.cur { background: var(--accent-soft); color: var(--accent-ink); font-weight: 500; }
+.steps .sep { flex: 0 0 28px; height: 1px; background: var(--line-strong); }
+.drop { margin: 0 16px; border: 1.5px dashed var(--line-strong); border-radius: 8px; padding: 44px 20px; text-align: center; background: var(--surface-2); color: var(--fg-2); }
+.drop .ic { width: 42px; height: 42px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 8px; display: grid; place-items: center; margin: 0 auto 12px; }
+.drop b { display: block; color: var(--fg); font-weight: 500; }
+.drop small { color: var(--fg-3); }
+textarea.paste { width: 100%; min-height: 96px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 10px; font-family: var(--mono); font-size: 12.5px; background: var(--surface); color: var(--fg); resize: vertical; }
+textarea.paste::placeholder { color: var(--fg-3); }
+.fieldlabel { font-size: 12.5px; color: var(--fg-2); margin: 16px 16px 6px; }
+
+/* ---------- Catalog price breaks ---------- */
+.breaks { position: relative; display: inline-block; }
+.breaks .pop { display: none; position: absolute; right: 0; top: 100%; margin-top: 6px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.14); padding: 8px 10px; z-index: 4; min-width: 170px; text-align: left; }
+.breaks:hover .pop, .breaks:focus-within .pop { display: block; }
+.breaks .pop div { display: flex; justify-content: space-between; gap: 14px; font-size: 12.5px; padding: 2px 0; }
+.breaks .pop div span:first-child { color: var(--fg-3); }
+.breaks u { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1180px) {
+  .attn { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .meta > div:nth-child(4n) { border-right: 1px solid var(--line); }
+  .meta > div:nth-child(2n) { border-right: 0; }
+  .meta > div:nth-last-child(-n+4) { border-bottom: 1px solid var(--line); }
+  .meta > div:nth-last-child(-n+2) { border-bottom: 0; }
+  .split, .editor { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .nav { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px; padding: 10px 12px; }
+  .brand { padding: 4px 8px; }
+  .nav-label, .sys, .nav .spacer { display: none; }
+  .nav a.item { padding: 6px 10px; }
+  .content, .topbar { padding-left: 16px; padding-right: 16px; }
+  .attn, .metrics { grid-template-columns: 1fr; }
+  .meta { grid-template-columns: 1fr; }
+  .meta > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important; }
+  .meta > div:last-child { border-bottom: 0 !important; }
+  .page-head .actions, .qhead .actions { margin-left: 0; width: 100%; }
+}
+</style>
+
+<div class="app">
+  <nav class="nav" aria-label="Main">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l4 4v14H8z"/><path d="M4 7v14h12"/><path d="M12 11h5M12 15h5"/></svg></span>
+      QuoteDesk
+    </div>
+    <div class="nav-label">Workspace</div>
+    <a class="item" href="#dashboard" data-nav="dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Dashboard<span class="count">6</span></a>
+    <a class="item" href="#quotes" data-nav="quotes"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Quotes</a>
+    <a class="item" href="#customers" data-nav="customers"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>Customers</a>
+    <a class="item" href="#catalog" data-nav="catalog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7.5 12 12l9-4.5z"/><path d="M3 7.5V16.5L12 21l9-4.5v-9"/><path d="M12 12v9"/></svg>Catalog</a>
+    <a class="item" href="#imports" data-nav="imports"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v3h16v-3"/></svg>Imports</a>
+    <div class="spacer"></div>
+    <a class="item" href="#settings" data-nav="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</a>
+    <div class="sys" aria-label="System status">
+      <div class="row"><span class="dot"></span>ERP sync<span class="when">2 min ago</span></div>
+      <div class="row"><span class="dot"></span>Email<span class="when">ok</span></div>
+      <div class="row"><span class="dot warn"></span>FX rates<span class="when">Sep 29</span></div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="page-title">Dashboard</h1>
+      <span class="chip">Sample data</span>
+      <div class="right">
+        <a class="link" href="#" onclick="return false">Report a bug</a>
+        <div class="user"><span class="avatar">MA</span><span>Mohammed Amine</span></div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="view" id="view-dashboard" data-title="Dashboard">
+        <div class="page-head">
+          <div>
+            <h2>Tuesday, September 30</h2>
+            <p>Six quotes need a decision from someone today. Numbers below are the last 30 days, in USD at the locked rate on each quote.</p>
+          </div>
+          <div class="actions"><a class="btn primary" href="#quote">New quote</a></div>
+        </div>
+
+        <div class="attn">
+          <div class="card">
+            <div class="card-h hot">Waiting for your approval<span class="n">2</span></div>
+            <ul>
+              <li onclick="go('quote')"><span class="qn">Q-2026-0042 <span class="rev">v2</span></span><span class="money">$10,920.80</span><span class="who">Acme Robotics · Dana Whitfield</span><span class="why"><b>Line discount 18%</b> · margin 16.5% · <span class="owner"><span class="avatar sm">SM</span>Sofia</span></span></li>
+              <li><span class="qn">Q-2026-0040</span><span class="money">$1,938.00</span><span class="who">Acme Robotics</span><span class="why"><b>Margin 17.2%</b> below 20% floor · <span class="owner"><span class="avatar sm">LK</span>Leah</span></span></li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-h">Follow-ups due<span class="n">2</span></div>
+            <ul>
+              <li><span class="qn">Q-2026-0038</span><span class="money">$3,195.00</span><span class="who">BlueWave Electronics</span><span class="why">Sent <b>19 days ago</b>, no reply · <span class="owner"><span class="avatar sm">LK</span>Leah</span></span></li>
+              <li><span class="qn">Q-2026-0037 <span class="rev">R1</span></span><span class="money">$3,091.20</span><span class="who">Helios Devices</span><span class="why">Opened 3×, <b>no reply for 12 days</b> · <span class="owner"><span class="avatar sm">SM</span>Sofia</span></span></li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-h">Expiring within 3 days<span class="n">1</span></div>
+            <ul>
+              <li><span class="qn">Q-2026-0038</span><span class="money">$3,195.00</span><span class="who">BlueWave Electronics</span><span class="why"><b class="age urgent">Expires tomorrow</b> · extend or close</span></li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-h">Stale drafts, 7 days+<span class="n">1</span></div>
+            <ul>
+              <li><span class="qn">Q-2026-0035</span><span class="money">$2,801.20</span><span class="who">Quantum Module Co.</span><span class="why">Untouched for <b>22 days</b> · <span class="owner"><span class="avatar sm">MA</span>You</span></span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="card tile">
+            <div class="l">Quotes sent</div>
+            <div class="v num">8</div>
+            <div class="d"><span class="up">+5</span><span>vs prior 30 days</span></div>
+          </div>
+          <div class="card tile">
+            <div class="l">Value sent</div>
+            <div class="v num">$42,305<small>USD</small></div>
+            <div class="d"><span>avg $5,288 per quote</span></div>
+          </div>
+          <div class="card tile">
+            <div class="l">Value won</div>
+            <div class="v num">$12,861</div>
+            <div class="d"><span class="down">−51%</span><span>fewer large deals, not fewer wins</span></div>
+          </div>
+          <div class="card tile">
+            <div class="l">Win rate</div>
+            <div class="v num">75%<small>by count</small></div>
+            <div class="d"><span><b class="num">30%</b> by value</span><span class="muted">· big deals are being lost</span></div>
+          </div>
+          <div class="card tile">
+            <div class="l">Gross margin, won</div>
+            <div class="v num">24.1%</div>
+            <div class="d"><span class="down">−2.3 pt</span><span>floor 20%</span></div>
+            <svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none" aria-label="Gross margin, last 8 weeks, from 27.9% down to 24.1%">
+              <defs><linearGradient id="sg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0 8 L28 10 L56 7 L84 12 L112 13 L140 18 L168 17 L200 21 L200 34 L0 34 Z" fill="url(#sg)"/>
+              <path d="M0 8 L28 10 L56 7 L84 12 L112 13 L140 18 L168 17 L200 21" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="200" cy="21" r="3" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="card">
+            <div class="card-h">Open pipeline by owner<a class="more" href="#quotes">All quotes</a></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Owner</th><th class="r">Open</th><th class="r">Value</th><th class="r">Margin</th><th class="r">Win rate</th></tr></thead>
+              <tbody>
+                <tr><td><span class="owner"><span class="avatar sm">SM</span>Sofia Marchetti</span></td><td class="r num">3</td><td class="r"><span class="money">$17,103.20</span></td><td class="r"><span class="margin ok">26.4%</span></td><td class="r num">80%</td></tr>
+                <tr><td><span class="owner"><span class="avatar sm">LK</span>Leah Kowalski</span></td><td class="r num">2</td><td class="r"><span class="money">$5,133.00</span></td><td class="r"><span class="margin low">18.9%</span></td><td class="r num">67%</td></tr>
+                <tr><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td class="r num">1</td><td class="r"><span class="money">$2,801.20</span></td><td class="r"><span class="margin ok">29.0%</span></td><td class="r num">75%</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+          <div class="card">
+            <div class="card-h">Recent activity<a class="more" href="#quotes">All quotes</a></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Quote</th><th>Customer</th><th>Status</th><th class="r">Total</th><th class="r">When</th></tr></thead>
+              <tbody>
+                <tr class="row" onclick="go('quote')"><td><span class="qn">Q-2026-0042 <span class="rev">v2</span></span></td><td>Acme Robotics Ltd</td><td><span class="pill approval">Needs approval</span></td><td class="r"><span class="money">$10,920.80</span></td><td class="r muted">2 h ago</td></tr>
+                <tr class="row"><td><span class="qn">Q-2026-0041</span></td><td>Helios Devices Corp</td><td><span class="pill won">Won</span></td><td class="r"><span class="money">$4,636.80</span></td><td class="r muted">yesterday</td></tr>
+                <tr class="row"><td><span class="qn">Q-2026-0040</span></td><td>Acme Robotics Ltd</td><td><span class="pill approval">Needs approval</span></td><td class="r"><span class="money">$1,938.00</span></td><td class="r muted">2 days ago</td></tr>
+                <tr class="row"><td><span class="qn">Q-2026-0039</span></td><td>Nova Circuits Inc.</td><td><span class="pill lost">Lost</span></td><td class="r"><span class="money">$4,170.00</span></td><td class="r muted">4 days ago</td></tr>
+                <tr class="row"><td><span class="qn">Q-2026-0038</span></td><td>BlueWave Electronics</td><td><span class="pill sent">Sent</span></td><td class="r"><span class="money">$3,195.00</span></td><td class="r muted">19 days ago</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= QUOTES ================= -->
+      <section class="view" id="view-quotes" data-title="Quotes" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Quotes</h2>
+            <p><span id="q-count">14 quotes</span> · <span class="money">$29,852.80</span> open across 3 currencies, shown in USD</p>
+          </div>
+          <div class="actions"><a class="btn" href="#" onclick="return false">Export CSV</a><a class="btn primary" href="#quote">New quote</a></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q-search" type="search" placeholder="Quote number, customer, PO or RFQ reference"></label>
+            <select class="sel" id="q-owner" aria-label="Owner"><option value="">Everyone</option><option value="MA">Mine</option><option value="SM">Sofia Marchetti</option><option value="LK">Leah Kowalski</option></select>
+            <div class="seg" id="q-filters" role="group" aria-label="Status">
+              <button aria-pressed="true" data-f="">All</button>
+              <button aria-pressed="false" data-f="approval">Needs approval <span class="n">2</span></button>
+              <button aria-pressed="false" data-f="draft">Draft</button>
+              <button aria-pressed="false" data-f="sent">Sent</button>
+              <button aria-pressed="false" data-f="won">Won</button>
+              <button aria-pressed="false" data-f="lost">Lost</button>
+              <button aria-pressed="false" data-f="expired">Expired</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="q-table">
+            <thead><tr><th>Quote</th><th>Customer</th><th>Owner</th><th>Status</th><th class="r">Total</th><th class="r">Margin</th><th>Age</th><th>Valid</th><th>Reference</th></tr></thead>
+            <tbody>
+              <tr class="row" data-s="approval" data-o="SM" onclick="go('quote')"><td><span class="qn">Q-2026-0042 <span class="rev">v2</span></span></td><td>Acme Robotics Ltd</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td><span class="pill approval">Needs approval</span></td><td class="r"><span class="money">$10,920.80</span></td><td class="r"><span class="margin low">16.5%</span></td><td class="age">2 h</td><td class="age">14 days</td><td class="mono muted">PO-ACM-7741</td></tr>
+              <tr class="row" data-s="won" data-o="SM"><td><span class="qn">Q-2026-0041</span></td><td>Helios Devices Corp</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td><span class="pill won">Won</span></td><td class="r"><span class="money">$4,636.80</span></td><td class="r"><span class="margin ok">27.8%</span></td><td class="age">15 d</td><td class="age muted">—</td><td class="mono muted">RFQ-HEL-0932</td></tr>
+              <tr class="row" data-s="approval" data-o="LK"><td><span class="qn">Q-2026-0040</span></td><td>Acme Robotics Ltd</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td><span class="pill approval">Needs approval</span></td><td class="r"><span class="money">$1,938.00</span></td><td class="r"><span class="margin low">17.2%</span></td><td class="age">16 d</td><td class="age">14 days</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="lost" data-o="LK"><td><span class="qn">Q-2026-0039</span></td><td>Nova Circuits Inc.</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td><span class="pill lost">Lost</span></td><td class="r"><span class="money">$4,170.00</span></td><td class="r"><span class="margin ok">25.1%</span></td><td class="age">18 d</td><td class="age muted">—</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="sent" data-o="LK"><td><span class="qn">Q-2026-0038</span></td><td>BlueWave Electronics</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td><span class="pill sent">Sent</span></td><td class="r"><span class="money">3,195.00<span class="ccy">CAD</span></span></td><td class="r"><span class="margin ok">23.9%</span></td><td class="age">19 d</td><td class="age urgent">Tomorrow</td><td class="mono muted">PO-BLU-2210</td></tr>
+              <tr class="row" data-s="sent" data-o="SM"><td><span class="qn">Q-2026-0037 <span class="rev">R1</span></span></td><td>Helios Devices Corp</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td><span class="pill sent">Sent</span></td><td class="r"><span class="money">$3,091.20</span></td><td class="r"><span class="margin ok">26.0%</span></td><td class="age">20 d</td><td class="age soon">4 days</td><td class="mono muted">RFQ-HEL-0928</td></tr>
+              <tr class="row" data-s="draft" data-o="MA"><td><span class="qn">Q-2026-0035</span></td><td>Quantum Module Co.</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td><span class="pill draft">Draft</span></td><td class="r"><span class="money">$2,801.20</span></td><td class="r"><span class="margin ok">29.0%</span></td><td class="age">22 d</td><td class="age muted">—</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="expired" data-o="SM"><td><span class="qn">Q-2026-0033</span></td><td>Ferro Components Inc.</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td><span class="pill expired">Expired</span></td><td class="r"><span class="money">2,980.00<span class="ccy">EUR</span></span></td><td class="r"><span class="margin mid">21.4%</span></td><td class="age">33 d</td><td class="age muted">19 days ago</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="won" data-o="LK"><td><span class="qn">Q-2026-0031</span></td><td>Nova Circuits Inc.</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td><span class="pill won">Won</span></td><td class="r"><span class="money">$6,810.00</span></td><td class="r"><span class="margin ok">24.6%</span></td><td class="age">36 d</td><td class="age muted">—</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="expired" data-o="MA"><td><span class="qn">Q-2026-0028</span></td><td>Orbital Sensors LLC</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td><span class="pill expired">Expired</span></td><td class="r"><span class="money">$2,628.70</span></td><td class="r"><span class="margin ok">28.3%</span></td><td class="age">41 d</td><td class="age muted">27 days ago</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="won" data-o="MA"><td><span class="qn">Q-2026-0025</span></td><td>Orbital Sensors LLC</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td><span class="pill won">Won</span></td><td class="r"><span class="money">$1,414.26</span></td><td class="r"><span class="margin ok">31.2%</span></td><td class="age">47 d</td><td class="age muted">—</td><td class="mono muted">—</td></tr>
+              <tr class="row" data-s="won" data-o="SM"><td><span class="qn">Q-2026-0022</span></td><td>Acme Robotics Ltd</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td><span class="pill won">Won</span></td><td class="r"><span class="money">$19,171.10</span></td><td class="r"><span class="margin ok">25.8%</span></td><td class="age">55 d</td><td class="age muted">—</td><td class="mono muted">PO-ACM-7702</td></tr>
+              <tr class="row faded" data-s="cancelled" data-o="MA" hidden><td><span class="qn">Q-2026-0043</span></td><td class="muted">No customer</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td><span class="pill cancelled">Cancelled</span></td><td class="r"><span class="money">$0.00</span></td><td class="r muted">—</td><td class="age">13 d</td><td class="age muted">—</td><td class="mono muted">number reserved</td></tr>
+            </tbody>
+          </table></div>
+          <div class="table-foot"><span id="q-hidden">1 cancelled quote hidden</span><button type="button" id="q-showcancel">Show</button></div>
+        </div>
+      </section>
+
+      <!-- ================= QUOTE EDITOR ================= -->
+      <section class="view" id="view-quote" data-title="Quote Q-2026-0042" hidden>
+        <div class="qhead">
+          <a class="back" href="#quotes">← Quotes</a>
+          <h2>Q-2026-0042</h2>
+          <span class="pill approval" id="q-status">Needs approval</span>
+          <div class="ver" aria-label="Versions"><span>v1 · sent Sep 16</span><span class="cur">v2 · editing</span></div>
+          <div class="actions">
+            <a class="btn" href="#" onclick="return false">Preview PDF</a>
+            <a class="btn" href="#" onclick="return false">Compare with v1</a>
+            <button class="btn primary" id="q-cta" type="button">Request approval</button>
+          </div>
+        </div>
+
+        <div class="card meta">
+          <div><div class="k">Customer</div><div class="v">Acme Robotics Ltd<small>Dana Whitfield · dana@acmerobotics.example</small></div></div>
+          <div><div class="k">Owner</div><div class="v"><span class="owner"><span class="avatar sm">SM</span>Sofia Marchetti</span><small>Approver: Mohammed Amine</small></div></div>
+          <div><div class="k">Currency</div><div class="v">USD<small>1 USD = 7.19 CNY · locked Sep 16 (ECB)</small></div></div>
+          <div><div class="k">Valid until</div><div class="v">Sep 30, 2026<small>14 days from send</small></div></div>
+          <div><div class="k">Incoterm</div><div class="v">FOB Shenzhen<small>Incoterms 2020</small></div></div>
+          <div><div class="k">Payment</div><div class="v">30% T/T deposit<small>70% before shipment</small></div></div>
+          <div><div class="k">Customer terms</div><div class="v">Net 30 · 5% standing discount<small>Contract prices valid to Dec 31</small></div></div>
+          <div><div class="k">Reference</div><div class="v mono">PO-ACM-7741<small>Revision of v1, requested by customer</small></div></div>
+        </div>
+
+        <div class="editor">
+          <div class="card">
+            <div class="card-h">Lines<span class="chip">4</span><span class="more">Qty and discount are editable · totals recompute in cents</span></div>
+            <div class="table-wrap"><table class="lines" id="lines">
+              <thead><tr><th></th><th>Part</th><th class="r">Qty</th><th class="r">Unit price</th><th class="r">Disc %</th><th class="r">Line total</th><th class="r">Margin</th></tr></thead>
+              <tbody>
+                <tr data-unit="361" data-cost="274" data-kind="product">
+                  <td class="idx">1</td>
+                  <td><div class="two"><span class="mono">ACM-32F407<span class="src vol">Vol. 500+</span></span><small class="desc">32-bit ARM Cortex-M4 MCU, 168 MHz, 1 MB flash · lead 12 wk</small></div></td>
+                  <td class="r"><input class="cell qty" id="l1-qty" value="1200" inputmode="numeric" aria-label="Quantity line 1"></td>
+                  <td class="r"><span class="money">$3.61</span><br><small class="muted">list $3.98</small></td>
+                  <td class="r"><input class="cell disc" id="l1-disc" value="0" inputmode="decimal" aria-label="Discount line 1"></td>
+                  <td class="r"><span class="money lt"></span></td>
+                  <td class="r"><span class="margin lm"></span></td>
+                </tr>
+                <tr data-unit="12100" data-cost="9650" data-kind="product">
+                  <td class="idx">2</td>
+                  <td><div class="two"><span class="mono">ACM-GW-EDGE<span class="src contract">Contract</span></span><small class="desc">Edge gateway, quad-core, 2 GB RAM, industrial · lead 16 wk</small></div></td>
+                  <td class="r"><input class="cell qty" id="l2-qty" value="40" inputmode="numeric" aria-label="Quantity line 2"></td>
+                  <td class="r"><span class="money">$121.00</span><br><small class="muted">list $132.00</small></td>
+                  <td class="r"><input class="cell disc" id="l2-disc" value="18" inputmode="decimal" aria-label="Discount line 2"></td>
+                  <td class="r"><span class="money lt"></span></td>
+                  <td class="r"><span class="margin lm"></span></td>
+                </tr>
+                <tr data-unit="44" data-cost="31" data-kind="product">
+                  <td class="idx">3</td>
+                  <td><div class="two"><span class="mono">ACM-OPAMP-Q<span class="src vol">Vol. 1000+</span></span><small class="desc">Quad low-noise op-amp, rail-to-rail, TSSOP-14 · lead 9 wk</small></div></td>
+                  <td class="r"><input class="cell qty" id="l3-qty" value="5000" inputmode="numeric" aria-label="Quantity line 3"></td>
+                  <td class="r"><span class="money">$0.44</span><br><small class="muted">list $0.48</small></td>
+                  <td class="r"><input class="cell disc" id="l3-disc" value="0" inputmode="decimal" aria-label="Discount line 3"></td>
+                  <td class="r"><span class="money lt"></span></td>
+                  <td class="r"><span class="margin lm"></span></td>
+                </tr>
+                <tr class="freight" data-unit="42000" data-cost="42000" data-kind="freight">
+                  <td class="idx">4</td>
+                  <td><div class="two"><span>Sea freight, FOB Shenzhen → Long Beach<span class="src">Freight</span></span><small class="desc">Pass-through, not discountable, excluded from margin</small></div></td>
+                  <td class="r"><span class="mono num">1</span></td>
+                  <td class="r"><span class="money">$420.00</span></td>
+                  <td class="r muted">—</td>
+                  <td class="r"><span class="money lt"></span></td>
+                  <td class="r muted">—</td>
+                </tr>
+                <tr class="addrow"><td colspan="7"><button type="button">+ Add line · type an MPN, paste from a sheet, or add freight, service or text</button></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="card summary">
+            <div class="r"><span class="sub">Products</span><span class="money" id="s-products"></span></div>
+            <div class="r"><span class="sub">Line discounts</span><span class="money" id="s-disc"></span></div>
+            <div class="r"><span class="sub">Quote discount</span><span class="money">$0.00</span></div>
+            <div class="r"><span class="sub">Freight</span><span class="money" id="s-freight"></span></div>
+            <div class="r total"><span>Total</span><span class="money" id="s-total"></span></div>
+            <div class="r margin"><span class="sub">Cost of goods</span><span class="money" id="s-cost"></span></div>
+            <div class="r"><span class="sub">Gross margin</span><span class="margin" id="s-margin"></span></div>
+            <div id="s-banner"></div>
+            <div class="cta">
+              <button class="btn primary" id="q-cta2" type="button">Request approval</button>
+              <button class="btn" type="button" disabled>Send to customer</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">Activity</div>
+          <ul class="timeline">
+            <li><span class="dot"></span><span><b>Sofia</b> changed line 2 discount from 12% to 18% and requested approval</span><span class="t">2 h ago</span></li>
+            <li><span class="dot"></span><span><b>Sofia</b> created v2 from v1, reason: customer asked for a better gateway price</span><span class="t">3 h ago</span></li>
+            <li><span class="dot info"></span><span><b>Dana Whitfield</b> opened the quote PDF (2 times)</span><span class="t">Sep 18</span></li>
+            <li><span class="dot good"></span><span><b>Sofia</b> sent v1 to dana@acmerobotics.example · $14,088.50</span><span class="t">Sep 16</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= CUSTOMERS ================= -->
+      <section class="view" id="view-customers" data-title="Customers" hidden>
+        <div class="page-head">
+          <div><h2>Customers</h2><p>10 accounts · 2 have gone quiet for more than 60 days</p></div>
+          <div class="actions"><a class="btn primary" href="#" onclick="return false">New customer</a></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Name, code, country or contact"></label>
+            <select class="sel" aria-label="Owner"><option>Everyone</option><option>Mine</option></select>
+            <div class="seg"><button aria-pressed="true">All</button><button aria-pressed="false">Active</button><button aria-pressed="false">Quiet 60 d+</button><button aria-pressed="false">Inactive</button></div>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Customer</th><th>Code</th><th>Owner</th><th>Country</th><th>Terms</th><th class="r">Discount</th><th class="r">Open</th><th class="r">Avg margin</th><th>Last quoted</th></tr></thead>
+            <tbody>
+              <tr class="row"><td><div class="two"><b>Acme Robotics Ltd</b><small>Dana Whitfield · contract to Dec 31</small></div></td><td class="mono muted">ACMROB</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td>United States</td><td>Net 30</td><td class="r num">5%</td><td class="r"><span class="money">$12,858.80</span><br><small class="muted">2 quotes</small></td><td class="r"><span class="margin mid">21.9%</span></td><td>2 h ago</td></tr>
+              <tr class="row"><td><div class="two"><b>BlueWave Electronics</b><small>Étienne Fortin · quotes in CAD</small></div></td><td class="mono muted">BLUWAV</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td>Canada</td><td>Net 30</td><td class="r num">0%</td><td class="r"><span class="money">3,195.00<span class="ccy">CAD</span></span><br><small class="muted">1 quote</small></td><td class="r"><span class="margin ok">23.9%</span></td><td>19 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Ferro Components Inc.</b><small>Grace Oyelaran · quotes in EUR</small></div></td><td class="mono muted">FERCOM</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td>United States</td><td>Net 60</td><td class="r num">2%</td><td class="r muted">—</td><td class="r"><span class="margin mid">21.4%</span></td><td>33 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Helios Devices Corp</b><small>Sofia Marchetti</small></div></td><td class="mono muted">HELDEV</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td>United States</td><td>Net 30</td><td class="r num">8%</td><td class="r"><span class="money">$3,091.20</span><br><small class="muted">1 quote</small></td><td class="r"><span class="margin ok">26.9%</span></td><td>15 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Meridian Instruments</b><small>Amara Okafor</small></div></td><td class="mono muted">MERINS</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td>United Kingdom</td><td>Net 30</td><td class="r num">4%</td><td class="r muted">—</td><td class="r muted">—</td><td class="age soon">74 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Nova Circuits Inc.</b><small>Priya Nandakumar</small></div></td><td class="mono muted">NOVCIR</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td>United States</td><td>Net 45</td><td class="r num">0%</td><td class="r muted">—</td><td class="r"><span class="margin ok">24.9%</span></td><td>18 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Orbital Sensors LLC</b><small>Leah Kowalski</small></div></td><td class="mono muted">ORBSEN</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td>United States</td><td>Net 30</td><td class="r num">3%</td><td class="r muted">—</td><td class="r"><span class="margin ok">29.8%</span></td><td>41 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Pulse Medical Devices</b><small>Naomi Feldman</small></div></td><td class="mono muted">PULMED</td><td><span class="owner"><span class="avatar sm">SM</span>Sofia</span></td><td>United States</td><td>Net 30</td><td class="r num">7%</td><td class="r muted">—</td><td class="r"><span class="margin ok">27.5%</span></td><td>58 days ago</td></tr>
+              <tr class="row"><td><div class="two"><b>Quantum Module Co.</b><small>Hiroshi Tanaka</small></div></td><td class="mono muted">QNTMOD</td><td><span class="owner"><span class="avatar sm">MA</span>You</span></td><td>United States</td><td>Net 30</td><td class="r num">6%</td><td class="r"><span class="money">$2,801.20</span><br><small class="muted">1 draft</small></td><td class="r"><span class="margin ok">29.0%</span></td><td>22 days ago</td></tr>
+              <tr class="row faded"><td><div class="two"><b>Terra Grid Systems <span class="pill cancelled plain">Inactive</span></b><small>Victor Alcaraz</small></div></td><td class="mono muted">TERGRD</td><td><span class="owner"><span class="avatar sm">LK</span>Leah</span></td><td>United States</td><td>Net 45</td><td class="r num">0%</td><td class="r">—</td><td class="r">—</td><td class="age urgent">131 days ago</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ================= CATALOG ================= -->
+      <section class="view" id="view-catalog" data-title="Catalog" hidden>
+        <div class="page-head">
+          <div><h2>Catalog</h2><p>24 parts · 3 NRND, 1 obsolete · prices from the Sep 22 import</p></div>
+          <div class="actions"><a class="btn" href="#imports">Import price list</a><a class="btn primary" href="#" onclick="return false">New part</a></div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="MPN, manufacturer, description or SKU"></label>
+            <select class="sel" aria-label="Lifecycle"><option>All lifecycles</option><option>Active</option><option>NRND</option><option>Obsolete</option></select>
+            <select class="sel" aria-label="Category"><option>All categories</option><option>Microcontrollers</option><option>Power</option><option>Passives</option><option>RF &amp; Wireless</option></select>
+            <select class="sel" aria-label="Manufacturer"><option>All manufacturers</option><option>Acme Semiconductors</option><option>Nimbus Micro</option><option>Orbit Modules</option></select>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>MPN</th><th>Manufacturer</th><th>Description</th><th>Category</th><th>Lifecycle</th><th class="r">Stock</th><th>Lead time</th><th class="r">Cost</th><th class="r">Price</th></tr></thead>
+            <tbody>
+              <tr class="row"><td><div class="two"><span class="mono">ACM-32F407</span><small class="mono">SKU-10021</small></div></td><td>Acme Semiconductors</td><td class="sub">32-bit ARM Cortex-M4 MCU, 168 MHz, 1 MB flash</td><td>Microcontrollers</td><td><span class="pill active">Active</span></td><td class="r num">4,200</td><td>12 wk</td><td class="r"><span class="money muted">$2.74</span></td><td class="r"><span class="breaks" tabindex="0"><span class="money"><u>$3.98</u></span><div class="pop"><div><span>1+</span><span class="money">$3.98</span></div><div><span>100+</span><span class="money">$3.79</span></div><div><span>500+</span><span class="money">$3.61</span></div><div><span>Margin at 500+</span><span class="margin ok">24.1%</span></div></div></span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono" style="color:var(--warn)">ACM-BUCK-5A</span><small class="mono">SKU-10120</small></div></td><td>Acme Semiconductors</td><td class="sub">Synchronous buck regulator 5 A, 4.5–18 V input, QFN-20 · replaced by ACM-BUCK-5B</td><td>Power</td><td><span class="pill nrnd">NRND</span></td><td class="r num">320</td><td>20 wk</td><td class="r"><span class="money muted">$1.12</span></td><td class="r"><span class="money">$1.64</span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono">ACM-BUCK-5B</span><small class="mono">SKU-10121</small></div></td><td>Acme Semiconductors</td><td class="sub">Synchronous buck regulator 5 A, 4.5–20 V input, QFN-20</td><td>Power</td><td><span class="pill active">Active</span></td><td class="r num">2,600</td><td>13 wk</td><td class="r"><span class="money muted">$1.19</span></td><td class="r"><span class="money">$1.72</span></td></tr>
+              <tr class="row faded"><td><div class="two"><span class="mono">ACM-EOL-8051</span><small class="mono">SKU-10402</small></div></td><td>Acme Semiconductors</td><td class="sub">Legacy 8-bit 8051 MCU, 8 KB flash, PDIP-40 · last-time buy</td><td>Microcontrollers</td><td><span class="pill obsolete">Obsolete</span></td><td class="r num">60</td><td>In stock only</td><td class="r"><span class="money muted">$1.10</span></td><td class="r"><span class="money">$1.64</span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono">ACM-GW-EDGE</span><small class="mono">SKU-10310</small></div></td><td>Acme Semiconductors</td><td class="sub">Edge gateway device, quad-core, 2 GB RAM, industrial</td><td>RF &amp; Wireless</td><td><span class="pill active">Active</span></td><td class="r num">45</td><td>16 wk</td><td class="r"><span class="money muted">$96.50</span></td><td class="r"><span class="money">$132.00</span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono">ACM-OPAMP-Q</span><small class="mono">SKU-10500</small></div></td><td>Acme Semiconductors</td><td class="sub">Quad low-noise op-amp, rail-to-rail, TSSOP-14</td><td>Passives</td><td><span class="pill active">Active</span></td><td class="r num">5,400</td><td>9 wk</td><td class="r"><span class="money muted">$0.31</span></td><td class="r"><span class="breaks" tabindex="0"><span class="money"><u>$0.48</u></span><div class="pop"><div><span>1+</span><span class="money">$0.48</span></div><div><span>1000+</span><span class="money">$0.44</span></div><div><span>Margin at 1000+</span><span class="margin ok">29.5%</span></div></div></span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono">NMB-32M4X</span><small class="mono">SKU-10044</small></div></td><td>Nimbus Micro</td><td class="sub">ARM Cortex-M4 MCU, 180 MHz, 512 KB flash</td><td>Microcontrollers</td><td><span class="pill active">Active</span></td><td class="r num">1,850</td><td>10 wk</td><td class="r"><span class="money muted">$3.55</span></td><td class="r"><span class="money">$4.98</span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono" style="color:var(--warn)">NMB-FLASH-128</span><small class="mono">SKU-10480</small></div></td><td>Nimbus Micro</td><td class="sub">128 Mbit SPI NOR flash memory, SOIC-8</td><td>Microcontrollers</td><td><span class="pill nrnd">NRND</span></td><td class="r num">90</td><td>22 wk</td><td class="r"><span class="money muted">$0.86</span></td><td class="r"><span class="money">$1.22</span></td></tr>
+              <tr class="row"><td><div class="two"><span class="mono">ORB-BLE-M1</span><small class="mono">SKU-10205</small></div></td><td>Orbit Modules</td><td class="sub">Bluetooth 5.0 LE module, integrated antenna, SMT</td><td>RF &amp; Wireless</td><td><span class="pill active">Active</span></td><td class="r num">380</td><td>15 wk</td><td class="r"><span class="money muted">$4.05</span></td><td class="r"><span class="money">$5.90</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="table-foot">Showing 9 of 24 · cost column visible to managers only</div>
+        </div>
+      </section>
+
+      <!-- ================= IMPORTS ================= -->
+      <section class="view" id="view-imports" data-title="Imports" hidden>
+        <div class="page-head">
+          <div><h2>Imports</h2><p>Bring price lists into the catalog, or match a customer BOM against it. Every import previews before it applies. Nothing changes until you confirm.</p></div>
+        </div>
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true">Catalog import</button>
+          <button role="tab" aria-selected="false">BOM import</button>
+        </div>
+        <div class="card">
+          <div class="steps">
+            <span class="s cur"><span class="n">1</span>Upload</span><span class="sep"></span>
+            <span class="s"><span class="n">2</span>Map columns</span><span class="sep"></span>
+            <span class="s"><span class="n">3</span>Preview changes</span><span class="sep"></span>
+            <span class="s"><span class="n">4</span>Apply</span>
+          </div>
+        </div>
+        <div class="card" style="padding-bottom:16px">
+          <div class="card-h">Upload a price list<a class="more" href="#" onclick="return false">Download sample template</a></div>
+          <p class="sub" style="margin:12px 16px 14px; max-width:70ch">CSV files only. If the list is in Excel, export it first: File → Save As → CSV. Wide layouts with repeated Qty / Price columns are supported. Rows are matched on MPN + manufacturer, so re-importing updates prices instead of creating duplicates.</p>
+          <div class="drop">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v3h16v-3"/></svg></div>
+            <b>Click to browse or drag a .csv file here</b>
+            <small>Tens of thousands of rows are fine</small>
+          </div>
+          <div class="fieldlabel">…or paste CSV text directly</div>
+          <div style="padding:0 16px"><textarea class="paste" id="paste-csv" placeholder="MPN,Manufacturer,Description,Qty 1,Price 1,Qty 2,Price 2…"></textarea></div>
+          <div style="padding:10px 16px 0"><button class="btn" type="button" disabled>Parse pasted text →</button></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-settings" data-title="Settings" hidden>
+        <div class="page-head"><div><h2>Settings</h2><p>Approval rules, margin floor, currencies and FX source, PDF templates, users and roles.</p></div></div>
+        <div class="card"><div class="card-h">Approval rules</div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Rule</th><th>Threshold</th><th>Approver</th></tr></thead>
+            <tbody>
+              <tr><td>Line discount above rep authority</td><td class="num">15%</td><td>Sales manager</td></tr>
+              <tr><td>Gross margin below floor</td><td class="num">20%</td><td>Sales manager</td></tr>
+              <tr><td>Quote total above</td><td><span class="money">$50,000.00</span></td><td>Sales manager + finance</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ----- navigation -----
+  const views = Array.from(document.querySelectorAll('.view'));
+  const navLinks = Array.from(document.querySelectorAll('[data-nav]'));
+  const titleEl = document.getElementById('page-title');
+  function show(name) {
+    const target = document.getElementById('view-' + name) ? name : 'dashboard';
+    views.forEach(v => { v.hidden = v.id !== 'view-' + target; });
+    const active = document.getElementById('view-' + target);
+    titleEl.textContent = active.dataset.title;
+    const navName = target === 'quote' ? 'quotes' : target;
+    navLinks.forEach(a => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    window.scrollTo(0, 0);
+  }
+  window.go = function (name) { location.hash = name; };
+  function fromHash() { show((location.hash || '#dashboard').slice(1).replace(/[^a-z]/g, '')); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // ----- quotes list filters -----
+  const qRows = Array.from(document.querySelectorAll('#q-table tbody tr'));
+  const qFilters = document.getElementById('q-filters');
+  const qOwner = document.getElementById('q-owner');
+  const qSearch = document.getElementById('q-search');
+  const qCount = document.getElementById('q-count');
+  const qShow = document.getElementById('q-showcancel');
+  const qHidden = document.getElementById('q-hidden');
+  let status = '', showCancelled = false;
+  function applyQuotes() {
+    const owner = qOwner.value, term = qSearch.value.trim().toLowerCase();
+    let n = 0;
+    qRows.forEach(r => {
+      const s = r.dataset.s;
+      let ok = (!status || s === status) && (!owner || r.dataset.o === owner) && (!term || r.textContent.toLowerCase().includes(term));
+      if (s === 'cancelled' && !showCancelled && status !== 'cancelled') ok = false;
+      r.hidden = !ok; if (ok) n++;
+    });
+    qCount.textContent = n + (n === 1 ? ' quote' : ' quotes');
+    qHidden.textContent = showCancelled ? 'Cancelled quotes shown' : '1 cancelled quote hidden';
+    qShow.textContent = showCancelled ? 'Hide' : 'Show';
+  }
+  qFilters.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    qFilters.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    status = b.dataset.f; applyQuotes();
+  });
+  qOwner.addEventListener('change', applyQuotes);
+  qSearch.addEventListener('input', applyQuotes);
+  qShow.addEventListener('click', () => { showCancelled = !showCancelled; applyQuotes(); });
+  applyQuotes();
+
+  // ----- quote editor: integer cents, round half-up per line -----
+  const RULES = { repDiscountLimit: 15, marginFloor: 20, approver: 'Mohammed Amine' };
+  const fmt = c => { const neg = c < 0; c = Math.abs(c); const s = (c / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); return (neg ? '−$' : '$') + s; };
+  const pct = x => (Math.round(x * 10) / 10).toFixed(1) + '%';
+  function marginClass(m) { return m < RULES.marginFloor ? 'low' : m < RULES.marginFloor + 5 ? 'mid' : 'ok'; }
+  function recompute() {
+    let products = 0, discounts = 0, freight = 0, cost = 0; const flags = [];
+    document.querySelectorAll('#lines tbody tr[data-unit]').forEach((tr, i) => {
+      const unit = +tr.dataset.unit, unitCost = +tr.dataset.cost, kind = tr.dataset.kind;
+      const qtyEl = tr.querySelector('.qty'), discEl = tr.querySelector('.disc');
+      const qty = qtyEl ? Math.max(0, parseInt(qtyEl.value, 10) || 0) : 1;
+      let disc = discEl ? parseFloat(discEl.value) || 0 : 0;
+      if (discEl) { const bad = disc < 0 || disc > 100; discEl.classList.toggle('bad', bad); disc = Math.min(100, Math.max(0, disc)); }
+      const gross = unit * qty;
+      const net = Math.round(gross * (100 - disc) / 100 + 1e-9); // half-up on cents
+      const lineCost = unitCost * qty;
+      tr.querySelector('.lt').textContent = fmt(net);
+      if (kind === 'freight') { freight += net; }
+      else {
+        products += gross; discounts += gross - net; cost += lineCost;
+        const m = net > 0 ? (net - lineCost) / net * 100 : 0;
+        const lm = tr.querySelector('.lm'); lm.textContent = pct(m); lm.className = 'margin ' + marginClass(m);
+        if (disc > RULES.repDiscountLimit) flags.push('Line ' + (i + 1) + ' discount ' + pct(disc) + ' is above the ' + RULES.repDiscountLimit + '% rep limit');
+      }
+    });
+    const total = products - discounts + freight;
+    const goods = products - discounts;
+    const margin = goods > 0 ? (goods - cost) / goods * 100 : 0;
+    if (margin < RULES.marginFloor) flags.push('Gross margin ' + pct(margin) + ' is below the ' + RULES.marginFloor + '% floor');
+    document.getElementById('s-products').textContent = fmt(products);
+    document.getElementById('s-disc').textContent = discounts ? '−' + fmt(discounts).slice(1) : '$0.00';
+    document.getElementById('s-freight').textContent = fmt(freight);
+    document.getElementById('s-total').textContent = fmt(total);
+    document.getElementById('s-cost').textContent = fmt(cost);
+    const sm = document.getElementById('s-margin'); sm.textContent = pct(margin) + ' · ' + fmt(goods - cost); sm.className = 'margin ' + marginClass(margin);
+    const banner = document.getElementById('s-banner');
+    const cta = document.getElementById('q-cta'), cta2 = document.getElementById('q-cta2'), st = document.getElementById('q-status');
+    if (flags.length) {
+      banner.innerHTML = '<div class="banner warn"><b>Needs approval from ' + RULES.approver + '</b><ul>' + flags.map(f => '<li>' + f + '</li>').join('') + '</ul></div>';
+      cta.textContent = cta2.textContent = 'Request approval'; st.textContent = 'Needs approval'; st.className = 'pill approval';
+    } else {
+      banner.innerHTML = '<div class="banner ok"><b>Within your authority.</b> No approval needed, you can send this now.</div>';
+      cta.textContent = cta2.textContent = 'Send to customer'; st.textContent = 'Draft'; st.className = 'pill draft';
+    }
+  }
+  document.getElementById('lines').addEventListener('input', recompute);
+  recompute();
+})();
+</script>
