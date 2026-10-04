@@ -7,5 +7,28 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Runtime data: database, imports, exports, backups, settings, API key
+data/
+
+# Frontend build output (built by start scripts / CI)
+frontend/dist/
+
+# PyInstaller
+build/
+dist/
+*.spec
+!backend/packaging/quotedesk.spec
+
+# Claude Code worktrees
+.claude/worktrees/
+
 # Unrelated Google Apps Script kept locally
 create-company-form.gs
