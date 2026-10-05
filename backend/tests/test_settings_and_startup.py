@@ -111,6 +111,36 @@ def test_groq_provider(client, data_dir, monkeypatch):
     assert created["api_key"] == "gsk-test-789"
 
 
+def test_inception_provider(client, data_dir, monkeypatch):
+    import httpx
+
+    from app.api import settings as settings_api
+
+    settings = client.get(f"{API}/settings").json()
+    assert settings["inception_model"] == "mercury-2.5"
+    settings.update(llm_provider="inception", inception_api_key="sk_test_321")
+    body = client.put(f"{API}/settings", json=settings).json()
+    assert body["inception_api_key_set"] is True and "sk_test_321" not in str(body)
+    assert "INCEPTION_API_KEY=sk_test_321" in (data_dir / ".env").read_text()
+
+    sent = {}
+    reply = httpx.Response(200, json={"model": "mercury-2.5"})
+
+    def fake_post(url, **kwargs):
+        sent.update(kwargs)
+        return reply
+
+    monkeypatch.setattr(settings_api.httpx, "post", fake_post)
+    assert client.post(f"{API}/settings/test-llm").json() == {
+        "ok": True, "model": "mercury-2.5", "detail": "ok",
+    }  # fmt: skip
+    assert sent["headers"]["Authorization"] == "Bearer sk_test_321"
+    reply = httpx.Response(401, json={"error": {"message": "Incorrect API key provided"}})
+    assert client.post(f"{API}/settings/test-llm").json()["detail"] == "auth"
+    reply = httpx.Response(400, text="Value error, Model must be one of the following: ...")
+    assert client.post(f"{API}/settings/test-llm").json()["detail"] == "model_not_found"
+
+
 def test_language_switch_persists(client):
     assert (
         client.put(f"{API}/settings/language", json={"ui_language": "en"}).json()["ui_language"]

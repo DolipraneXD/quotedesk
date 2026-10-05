@@ -1,8 +1,8 @@
 """Runtime paths and user settings.
 
 Settings live in ``data/settings.json`` (edited from the UI). The AI provider keys
-(Anthropic, Google Gemini, Groq) are the exception: they are kept in ``data/.env`` and never
-returned to the browser.
+(Anthropic, Google Gemini, Groq, Inception) are the exception: they are kept in
+``data/.env`` and never returned to the browser.
 """
 
 from __future__ import annotations
@@ -28,11 +28,12 @@ BUNDLE_DIR = Path(getattr(sys, "_MEIPASS", REPO_DIR))
 APP_DIR = Path(sys.executable).resolve().parent if FROZEN else REPO_DIR
 FRONTEND_DIST = BUNDLE_DIR / "frontend" / "dist"
 
-LlmProvider = Literal["anthropic", "google", "groq"]
+LlmProvider = Literal["anthropic", "google", "groq", "inception"]
 API_KEY_VARS: dict[str, str] = {
     "anthropic": "ANTHROPIC_API_KEY",
     "google": "GEMINI_API_KEY",
     "groq": "GROQ_API_KEY",
+    "inception": "INCEPTION_API_KEY",
 }
 
 
@@ -99,6 +100,7 @@ class AppSettings(BaseModel):
     llm_model: str = "claude-sonnet-5-5"  # Anthropic model
     gemini_model: str = "gemini-3.8-flash"
     groq_model: str = "qwen/qwen3.8-27b"  # the Groq model with vision and strict JSON schema
+    inception_model: str = "mercury-2.5"  # text only: no screenshots or scanned pages
     ui_language: str = "zh"
     rounding: int = 2
     backup_retention: int = 30
@@ -133,6 +135,7 @@ def active_model(settings: AppSettings) -> str:
         "anthropic": settings.llm_model,
         "google": settings.gemini_model,
         "groq": settings.groq_model,
+        "inception": settings.inception_model,
     }[settings.llm_provider]
 
 

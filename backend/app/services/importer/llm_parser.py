@@ -1,7 +1,8 @@
 """AI extraction of product rows from price lists (plan §4.1 step 4).
 
-Three providers share the prompt and the output schema: Claude (``ClaudeExtractor``),
-Google Gemini (``GeminiExtractor``) and Groq (``GroqExtractor``); Settings picks one. The
+Four providers share the prompt and the output schema: Claude (``ClaudeExtractor``),
+Google Gemini (``GeminiExtractor``), Groq (``GroqExtractor``) and Inception Mercury
+(``InceptionExtractor``, text only); Settings picks one. The
 model gets a stable system prompt (rules, category schemas, brand list - cached where the
 provider supports it) and one unit of work: a spreadsheet chunk rendered as a Markdown grid
 with row numbers, a screenshot, or a PDF page (numbered text lines plus the rendered page).
@@ -11,6 +12,7 @@ Decimal amounts are parsed with ``parse_float=Decimal``: no price ever becomes a
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from collections.abc import Sequence
@@ -20,6 +22,7 @@ from typing import Any, Literal, Protocol
 
 import anthropic
 import groq
+import httpx
 from anthropic.types.beta import BetaOutputConfigParam
 from google import genai
 from google.genai import errors as genai_errors
@@ -544,5 +547,107 @@ class GroqExtractor:
                 input_tokens=usage.prompt_tokens if usage else 0,
                 output_tokens=usage.completion_tokens if usage else 0,
                 model=completion.model or self.model,
+            )
+        raise ExtractionError(f"Invalid output after 3 attempts: {last_error}")
+
+
+INCEPTION_URL = "https://api.inceptionlabs.ai/v1/chat/completions"
+INCEPTION_RETRY_STATUS = {408, 409, 429, 500, 502, 503, 504}
+TEXT_ONLY_PAGE = "(The rendered page is not attached: read the numbered text lines only.)"
+
+
+class InceptionExtractor:
+    """Calls Inception's OpenAI-style chat completions (Mercury) with a strict JSON schema.
+
+    Mercury reads text only: spreadsheet chunks and the text layer of PDF pages work, while
+    screenshots and scanned pages are refused with an error that names the other providers.
+    There is no official SDK, so requests go through httpx with the SDKs' retry policy.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        system: str,
+        category_codes: Sequence[str],
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self.model = model
+        self.api_key = api_key
+        self.client = client  # None: one short-lived client per request, closed in its loop
+        self.system = system
+        self.response_format: Any = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "price_rows",
+                "strict": True,
+                "schema": output_schema(category_codes),
+            },
+        }
+
+    async def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if self.client is not None:
+            return await self._send(self.client, payload)
+        async with httpx.AsyncClient(timeout=600.0) as client:
+            return await self._send(client, payload)
+
+    async def _send(self, client: httpx.AsyncClient, payload: dict[str, Any]) -> dict[str, Any]:
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        for attempt in range(5):
+            try:
+                response = await client.post(INCEPTION_URL, json=payload, headers=headers)
+            except httpx.HTTPError as exc:
+                if attempt == 4:
+                    raise ExtractionError(f"Network error: {exc}") from exc
+            else:
+                if response.status_code not in INCEPTION_RETRY_STATUS or attempt == 4:
+                    break
+            await asyncio.sleep(2**attempt)
+        if response.status_code >= 400:
+            try:
+                message = response.json()["error"]["message"]
+            except (ValueError, KeyError, TypeError):
+                message = response.text
+            raise ExtractionError(f"API error {response.status_code}: {message}")
+        result: dict[str, Any] = response.json()
+        return result
+
+    async def extract(self, context: ChunkContext) -> ChunkResult:
+        if context.kind != "sheet" and not context.body:
+            raise ExtractionError(
+                "Inception Mercury reads text only: use Claude, Gemini or Groq for "
+                "screenshots and scanned PDF pages"
+            )
+        content = user_message(context)
+        if context.kind == "pdf_page":
+            content = f"{content}\n\n{TEXT_ONLY_PAGE}"
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": self.system},
+                {"role": "user", "content": content},
+            ],
+            "response_format": self.response_format,
+            "max_tokens": context.max_tokens,
+            "reasoning_effort": "medium",  # "low" misreads USD columns as CNY
+        }
+        last_error: Exception | None = None
+        for _attempt in range(3):
+            completion = await self._post(payload)
+            choice = completion["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise OutputTooLong("output exceeded max_tokens")
+            try:
+                data = parse_output(choice["message"].get("content") or "")
+            except ValueError as exc:
+                last_error = exc
+                continue
+            usage = completion.get("usage") or {}
+            return ChunkResult(
+                rows=data["rows"],
+                sheet_meta=data.get("sheet_meta") or {},
+                input_tokens=usage.get("prompt_tokens") or 0,
+                output_tokens=usage.get("completion_tokens") or 0,
+                model=completion.get("model") or self.model,
             )
         raise ExtractionError(f"Invalid output after 3 attempts: {last_error}")

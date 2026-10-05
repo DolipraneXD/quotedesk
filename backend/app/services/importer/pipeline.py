@@ -37,6 +37,7 @@ from app.services.importer.llm_parser import (
     Extractor,
     GeminiExtractor,
     GroqExtractor,
+    InceptionExtractor,
     OutputTooLong,
     SourceKind,
     system_prompt,
@@ -177,9 +178,12 @@ def make_extractor(session: Session) -> Extractor:
         )  # fmt: skip
     categories = list(session.scalars(select(Category).order_by(Category.sort_order)))
     brands = list(session.scalars(select(Brand).order_by(Brand.canonical)))
-    cls = {"anthropic": ClaudeExtractor, "google": GeminiExtractor, "groq": GroqExtractor}[
-        settings.llm_provider
-    ]
+    cls = {
+        "anthropic": ClaudeExtractor,
+        "google": GeminiExtractor,
+        "groq": GroqExtractor,
+        "inception": InceptionExtractor,
+    }[settings.llm_provider]
     return cls(
         api_key=key,
         model=active_model(settings),

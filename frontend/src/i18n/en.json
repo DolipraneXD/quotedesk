@@ -189,6 +189,8 @@
       "network": "Cannot reach the AI provider"
     },
     "provider_groq": "Groq",
+    "provider_inception": "Inception Mercury",
+    "provider_inception_hint": "Text only: spreadsheets and PDFs with selectable text. Screenshots and scanned pages need another provider.",
     "logo": "Logo",
     "logoHelp": "Printed at the top left of quotes.",
     "noImage": "None",

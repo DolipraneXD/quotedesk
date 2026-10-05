@@ -3,7 +3,7 @@
     QUOTEDESK_LIVE=1 ANTHROPIC_API_KEY=sk-ant-... pytest -m live
     QUOTEDESK_LIVE=1 GEMINI_API_KEY=AIza... pytest -m live
 
-Each test runs once per provider whose key is set.
+Each test runs once per provider whose key is set; text-only providers skip the screenshots.
 
 They run the real pipeline (prompt, structured output, normalization) on the sample
 workbooks and check the rules the plan cares about, not every byte of model output.
@@ -23,6 +23,7 @@ from tests.conftest import FIXTURES
 API = "/api/v1"
 KEYS = {provider: os.environ.get(var) for provider, var in API_KEY_VARS.items()}
 PROVIDERS = [provider for provider, key in KEYS.items() if key]
+TEXT_ONLY = {"inception"}
 
 pytestmark = [
     pytest.mark.live,
@@ -36,6 +37,8 @@ pytestmark = [
 @pytest.fixture(params=PROVIDERS or ["anthropic"])
 def live(request, client, monkeypatch):
     provider = request.param
+    if provider in TEXT_ONLY and request.node.name.startswith("test_screenshots"):
+        pytest.skip(f"{provider} reads text only")
     monkeypatch.setenv(API_KEY_VARS[provider], KEYS[provider] or "")
     monkeypatch.setattr(pipeline, "spawn", lambda target: target())
     settings = client.get(f"{API}/settings").json()

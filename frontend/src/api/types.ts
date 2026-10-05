@@ -223,21 +223,24 @@ export interface Settings {
   llm_model: string
   gemini_model: string
   groq_model: string
+  inception_model: string
   ui_language: 'en' | 'zh'
   rounding: number
   backup_retention: number
   anthropic_api_key_set: boolean
   gemini_api_key_set: boolean
   groq_api_key_set: boolean
+  inception_api_key_set: boolean
 }
 
-export type LlmProvider = 'anthropic' | 'google' | 'groq'
+export type LlmProvider = 'anthropic' | 'google' | 'groq' | 'inception'
 
 /** Write-only key fields: undefined = keep, '' = remove. */
 export interface ApiKeysIn {
   anthropic_api_key?: string | null
   gemini_api_key?: string | null
   groq_api_key?: string | null
+  inception_api_key?: string | null
 }
 
 export function providerKeySet(settings: Settings): boolean {
@@ -245,6 +248,7 @@ export function providerKeySet(settings: Settings): boolean {
     anthropic: settings.anthropic_api_key_set,
     google: settings.gemini_api_key_set,
     groq: settings.groq_api_key_set,
+    inception: settings.inception_api_key_set,
   }[settings.llm_provider]
 }
 

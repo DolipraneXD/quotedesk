@@ -21,6 +21,7 @@ from app.services.importer.llm_parser import (
     ExtractionError,
     GeminiExtractor,
     GroqExtractor,
+    InceptionExtractor,
     OutputTooLong,
     output_schema,
     parse_output,
@@ -358,3 +359,81 @@ def test_groq_length_retry_and_errors():
     error = groq.RateLimitError("Rate limit reached", response=response, body=None)
     with pytest.raises(ExtractionError, match="API error 429"):
         run(groq_extractor(StubGroq([error])).extract(context()))
+
+
+# -------------------------------------------------------------------- Inception
+
+
+def inception_body(text: str = json.dumps(GOOD), finish: str = "stop") -> dict[str, Any]:
+    return {
+        "model": "mercury-2.5",
+        "choices": [{"finish_reason": finish, "message": {"content": text}}],
+        "usage": {"prompt_tokens": 3800, "completion_tokens": 2200},
+    }
+
+
+def inception(responses: list[httpx.Response]) -> tuple[InceptionExtractor, list[httpx.Request]]:
+    calls: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return responses.pop(0)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handle))
+    extractor = InceptionExtractor(
+        api_key="sk_test", model="mercury-2.5", system="SYSTEM", category_codes=CODES,
+        client=client,
+    )  # fmt: skip
+    return extractor, calls
+
+
+def test_inception_request_shape_and_result():
+    extractor, calls = inception([httpx.Response(200, json=inception_body())])
+    result = run(extractor.extract(context()))
+    request = calls[0]
+    assert str(request.url) == "https://api.inceptionlabs.ai/v1/chat/completions"
+    assert request.headers["authorization"] == "Bearer sk_test"
+    call = json.loads(request.content)
+    assert call["model"] == "mercury-2.5" and call["reasoning_effort"] == "medium"
+    assert call["messages"][0] == {"role": "system", "content": "SYSTEM"}
+    assert call["messages"][1]["content"].endswith("| row |")
+    fmt = call["response_format"]
+    assert fmt["type"] == "json_schema" and fmt["json_schema"]["strict"] is True
+    assert fmt["json_schema"]["schema"] == output_schema(CODES)
+    assert call["max_tokens"] == 32000
+    amount = result.rows[0]["prices"][0]["amount"]
+    assert isinstance(amount, Decimal) and amount == Decimal("14.85")
+    assert (result.input_tokens, result.output_tokens) == (3800, 2200)
+
+
+def test_inception_is_text_only():
+    extractor, calls = inception([httpx.Response(200, json=inception_body())])
+    with pytest.raises(ExtractionError, match="text only"):
+        run(extractor.extract(image_context()))
+    page = ChunkContext(
+        "q.pdf", "Page 1", None, None, None, None, "1: CPU 100", kind="pdf_page",
+        images=[ImageInput("image/jpeg", b"\xff\xd8jpeg")],
+    )  # fmt: skip
+    run(extractor.extract(page))
+    content = json.loads(calls[0].content)["messages"][1]["content"]
+    assert isinstance(content, str) and "1: CPU 100" in content and "not attached" in content
+
+
+def test_inception_length_retry_and_errors(monkeypatch):
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    extractor, _ = inception([httpx.Response(200, json=inception_body(finish="length"))])
+    with pytest.raises(OutputTooLong):
+        run(extractor.extract(context()))
+    bad, good = inception_body("{bad"), inception_body()
+    extractor, calls = inception([httpx.Response(200, json=bad), httpx.Response(200, json=good)])
+    assert run(extractor.extract(context())).rows and len(calls) == 2
+    busy = httpx.Response(429, json={"error": {"message": "Rate limit reached"}})
+    extractor, calls = inception([busy, httpx.Response(200, json=inception_body())])
+    assert run(extractor.extract(context())).rows and len(calls) == 2  # retried
+    denied = httpx.Response(401, json={"error": {"message": "Incorrect API key provided"}})
+    extractor, _ = inception([denied])
+    with pytest.raises(ExtractionError, match="API error 401: Incorrect API key"):
+        run(extractor.extract(context()))

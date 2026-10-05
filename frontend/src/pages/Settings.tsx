@@ -64,8 +64,12 @@ type FormValues = SettingsT & ApiKeysIn
 const PROVIDERS: {
   provider: LlmProvider
   keyField: keyof ApiKeysIn
-  keySetField: 'anthropic_api_key_set' | 'gemini_api_key_set' | 'groq_api_key_set'
-  modelField: 'llm_model' | 'gemini_model' | 'groq_model'
+  keySetField:
+    | 'anthropic_api_key_set'
+    | 'gemini_api_key_set'
+    | 'groq_api_key_set'
+    | 'inception_api_key_set'
+  modelField: 'llm_model' | 'gemini_model' | 'groq_model' | 'inception_model'
   placeholder: string
 }[] = [
   {
@@ -88,6 +92,13 @@ const PROVIDERS: {
     keySetField: 'groq_api_key_set',
     modelField: 'groq_model',
     placeholder: 'gsk_…',
+  },
+  {
+    provider: 'inception',
+    keyField: 'inception_api_key',
+    keySetField: 'inception_api_key_set',
+    modelField: 'inception_model',
+    placeholder: 'sk_…',
   },
 ]
 
@@ -138,13 +149,16 @@ function GeneralTab() {
         ...settings.data,
         anthropic_api_key: undefined,
         gemini_api_key: undefined,
+        groq_api_key: undefined,
+        inception_api_key: undefined,
       })
     }
   }, [settings.data, form])
 
   const persist = async (values: FormValues) => {
     if (!settings.data) return
-    const { anthropic_api_key, gemini_api_key, groq_api_key, ...rest } = values
+    const { anthropic_api_key, gemini_api_key, groq_api_key, inception_api_key, ...rest } =
+      values
     await save.mutateAsync({
       ...settings.data,
       ...rest,
@@ -153,11 +167,13 @@ function GeneralTab() {
       anthropic_api_key: anthropic_api_key || undefined,
       gemini_api_key: gemini_api_key || undefined,
       groq_api_key: groq_api_key || undefined,
+      inception_api_key: inception_api_key || undefined,
     })
     form.setFieldsValue({
       anthropic_api_key: undefined,
       gemini_api_key: undefined,
       groq_api_key: undefined,
+      inception_api_key: undefined,
     })
   }
 
@@ -253,7 +269,11 @@ function GeneralTab() {
       </Card>
 
       <Card title={t('settings.ai')} size="small" style={{ marginTop: 16 }}>
-        <Form.Item name="llm_provider" label={t('settings.provider')}>
+        <Form.Item
+          name="llm_provider"
+          label={t('settings.provider')}
+          extra={provider === 'inception' ? t('settings.provider_inception_hint') : undefined}
+        >
           <Radio.Group
             optionType="button"
             options={PROVIDERS.map((p) => ({

@@ -189,6 +189,8 @@
       "network": "无法连接 AI 服务"
     },
     "provider_groq": "Groq",
+    "provider_inception": "Inception Mercury",
+    "provider_inception_hint": "仅支持文本：表格和可选中文字的 PDF。截图和扫描件请使用其他服务商。",
     "logo": "Logo",
     "logoHelp": "打印在报价单左上角。",
     "noImage": "无",

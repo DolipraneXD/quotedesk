@@ -4,6 +4,7 @@ from typing import Any
 
 import anthropic
 import groq
+import httpx
 from fastapi import APIRouter
 from google import genai
 from google.genai import errors as genai_errors
@@ -19,6 +20,7 @@ from app.config import (
     set_api_key,
 )
 from app.errors import ProblemError
+from app.services.importer.llm_parser import INCEPTION_URL
 
 router = APIRouter(tags=["settings"])
 
@@ -27,6 +29,7 @@ class SettingsOut(AppSettings):
     anthropic_api_key_set: bool = False
     gemini_api_key_set: bool = False
     groq_api_key_set: bool = False
+    inception_api_key_set: bool = False
 
 
 class SettingsIn(AppSettings):
@@ -34,6 +37,7 @@ class SettingsIn(AppSettings):
     anthropic_api_key: str | None = None
     gemini_api_key: str | None = None
     groq_api_key: str | None = None
+    inception_api_key: str | None = None
 
 
 def _out() -> SettingsOut:
@@ -42,6 +46,7 @@ def _out() -> SettingsOut:
         anthropic_api_key_set=bool(get_api_key("anthropic")),
         gemini_api_key_set=bool(get_api_key("google")),
         groq_api_key_set=bool(get_api_key("groq")),
+        inception_api_key_set=bool(get_api_key("inception")),
     )
 
 
@@ -53,7 +58,7 @@ def get_settings() -> SettingsOut:
 @router.put("/settings", response_model=SettingsOut)
 def put_settings(body: SettingsIn) -> SettingsOut:
     data: dict[str, Any] = body.model_dump(
-        exclude={"anthropic_api_key", "gemini_api_key", "groq_api_key"}
+        exclude={"anthropic_api_key", "gemini_api_key", "groq_api_key", "inception_api_key"}
     )
     save_settings(AppSettings.model_validate(data))
     if body.anthropic_api_key is not None:
@@ -62,6 +67,8 @@ def put_settings(body: SettingsIn) -> SettingsOut:
         set_api_key(body.gemini_api_key.strip() or None, "google")
     if body.groq_api_key is not None:
         set_api_key(body.groq_api_key.strip() or None, "groq")
+    if body.inception_api_key is not None:
+        set_api_key(body.inception_api_key.strip() or None, "inception")
     return _out()
 
 
@@ -102,6 +109,8 @@ def test_llm() -> LlmTestOut:
         return _test_gemini(key, model)
     if settings.llm_provider == "groq":
         return _test_groq(key, model)
+    if settings.llm_provider == "inception":
+        return _test_inception(key, model)
     return _test_anthropic(key, model)
 
 
@@ -164,3 +173,27 @@ def _test_groq(key: str, model: str) -> LlmTestOut:
     except groq.APIConnectionError:
         return LlmTestOut(ok=False, model=model, detail="network")
     return LlmTestOut(ok=True, model=completion.model or model, detail="ok")
+
+
+def _test_inception(key: str, model: str) -> LlmTestOut:
+    try:
+        response = httpx.post(
+            INCEPTION_URL,
+            headers={"Authorization": f"Bearer {key}"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": PING}],
+                "max_tokens": 64,
+                "reasoning_effort": "low",
+            },
+            timeout=30.0,
+        )
+    except httpx.HTTPError:
+        return LlmTestOut(ok=False, model=model, detail="network")
+    if response.status_code in (401, 403):
+        return LlmTestOut(ok=False, model=model, detail="auth")
+    if response.status_code == 404 or "Model must be one of" in response.text:
+        return LlmTestOut(ok=False, model=model, detail="model_not_found")
+    if response.status_code >= 400:
+        return LlmTestOut(ok=False, model=model, detail=f"http_{response.status_code}")
+    return LlmTestOut(ok=True, model=response.json().get("model") or model, detail="ok")

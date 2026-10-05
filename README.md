@@ -16,11 +16,13 @@ dashboard, backups and the Windows desktop build.
 
 ### Importing a price list
 
-1. Settings → General → AI import: pick the provider (**Anthropic Claude**, **Google Gemini** or
-   **Groq**), paste its API key, then **Test connection** (it saves first). Anthropic keys start with
-   `sk-ant-` (console.anthropic.com); Gemini keys start with `AIza` (aistudio.google.com/apikey); Groq
-   keys start with `gsk_` (console.groq.com/keys; the free tier is too small for real imports, so use
-   the Dev Tier).
+1. Settings → General → AI import: pick the provider (**Anthropic Claude**, **Google Gemini**,
+   **Groq** or **Inception Mercury**), paste its API key, then **Test connection** (it saves first).
+   Anthropic keys start with `sk-ant-` (console.anthropic.com); Gemini keys start with `AIza`
+   (aistudio.google.com/apikey); Groq keys start with `gsk_` (console.groq.com/keys; the free tier is
+   too small for real imports, so use the Dev Tier); Inception keys start with `sk_`
+   (platform.inceptionlabs.ai). Mercury reads text only: spreadsheets and PDFs with a text layer, not
+   screenshots or scanned pages.
 2. Imports: drop one `.xlsx` / `.csv` file, or any number of screenshots (`.png`, `.jpg`) and PDFs.
    Screenshots dropped together become one import. Every sheet, screenshot and PDF page is listed;
    price-like visible sheets are pre-ticked (tick hidden ones if needed). A category hint per source is
@@ -101,7 +103,7 @@ Everything lives in `data/` (git-ignored; in the desktop build, next to `QuoteDe
 |---|---|
 | `data/app.db` | SQLite database |
 | `data/settings.json` | Settings edited in the app |
-| `data/.env` | AI provider keys, `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GROQ_API_KEY` (never sent to the browser) |
+| `data/.env` | AI provider keys, `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GROQ_API_KEY` / `INCEPTION_API_KEY` (never sent to the browser) |
 | `data/backups/` | Database copies (one at every start, newest 30 kept), manual and full backups |
 | `data/imports/`, `data/exports/` | Uploaded price lists, generated quotes |
 | `data/images/` | Product photos, logo, signature |
@@ -134,6 +136,7 @@ cd backend && ../.venv/bin/pytest -q && ../.venv/bin/ruff check . && ../.venv/bi
 cd backend && QUOTEDESK_LIVE=1 ANTHROPIC_API_KEY=sk-ant-... ../.venv/bin/pytest -m live -q
 cd backend && QUOTEDESK_LIVE=1 GEMINI_API_KEY=AIza... ../.venv/bin/pytest -m live -q
 cd backend && QUOTEDESK_LIVE=1 GROQ_API_KEY=gsk_... ../.venv/bin/pytest -m live -q
+cd backend && QUOTEDESK_LIVE=1 INCEPTION_API_KEY=sk_... ../.venv/bin/pytest -m live -q
 cd frontend && npm run lint && npm run typecheck && npm run build
 ```
 
@@ -150,7 +153,7 @@ backend/app/
     importer/normalize.py   value normalization + product fingerprint (pure, unit-tested)
     importer/extract_xlsx.py  sheet grid, merged-cell fill, header + metadata, chunks
     importer/extract_media.py screenshots and PDF pages: summaries, numbered text, page renders
-    importer/llm_parser.py  model call (Claude, Gemini or Groq): prompt, JSON schema, retries
+    importer/llm_parser.py  model call (Claude, Gemini, Groq or Mercury): prompt, JSON schema, retries
     importer/matcher.py     normalize + match an extracted row (ERP > MPN > fingerprint > fuzzy)
     importer/pipeline.py    upload, background extraction, analysis
     importer/mapping.py     manual column mapping (import without the AI)
