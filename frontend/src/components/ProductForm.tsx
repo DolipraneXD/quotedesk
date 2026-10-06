@@ -32,6 +32,7 @@ import {
   type ProductInput,
 } from '../api/types'
 import { attrLabel, errorMessage, localName } from '../lib/i18n-helpers'
+import { DeviceSelect } from './DeviceSelect'
 
 type FormValues = Omit<ProductInput, 'price_date'> & {
   flags?: string[]
@@ -305,6 +306,11 @@ function ProductFormBody({ product, initialCategoryId, onClose, onSaved }: Props
           <Col span={12}>
             <Form.Item name="platform" label={t('product.platform')}>
               <Input placeholder="X86 / Intel/AMD / ARM" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="device_type" label={t('device.label')} extra={t('device.productHelp')}>
+              <DeviceSelect />
             </Form.Item>
           </Col>
           <Col span={24}>

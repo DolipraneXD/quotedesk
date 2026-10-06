@@ -48,6 +48,8 @@ import {
   type ConfigurationUsage,
 } from '../api/configurations'
 import { imageUrl } from '../api/quotes'
+import type { DeviceType } from '../api/types'
+import { DeviceSelect } from '../components/DeviceSelect'
 import ProductPicker from '../components/ProductPicker'
 import { CommitNumber, CommitText } from '../components/quote/CommitInput'
 import { DescriptionPreview } from '../components/quote/LineDetailsModal'
@@ -170,6 +172,7 @@ interface DetailsValues {
   model_no: string | null
   material: string | null
   platform: string | null
+  device_type: DeviceType | null
   base_margin_pct: string | null
   notes: string | null
 }
@@ -190,6 +193,7 @@ function DetailsCard({
       model_no: config.model_no,
       material: config.material,
       platform: config.platform,
+      device_type: config.device_type,
       base_margin_pct: config.base_margin_pct === null ? null : trim(config.base_margin_pct),
       notes: config.notes,
     })
@@ -215,6 +219,7 @@ function DetailsCard({
             model_no: blank(v.model_no),
             material: blank(v.material),
             platform: blank(v.platform),
+            device_type: v.device_type ?? null,
             base_margin_pct: blank(v.base_margin_pct),
             notes: blank(v.notes),
           })
@@ -244,6 +249,15 @@ function DetailsCard({
           <Col span={8}>
             <Form.Item name="platform" label={t('config.platform')}>
               <Input />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              name="device_type"
+              label={t('device.label')}
+              tooltip={t('device.configHelp')}
+            >
+              <DeviceSelect />
             </Form.Item>
           </Col>
           <Col span={8}>
@@ -488,8 +502,13 @@ function PartsCard({
         ]}
       />
       <Space wrap style={{ marginTop: 12 }}>
-        <div style={{ width: 360 }}>
-          <ProductPicker value={productId} onChange={setProductId} />
+        <div style={{ width: 480 }}>
+          <ProductPicker
+            value={productId}
+            onChange={setProductId}
+            deviceFilter
+            device={config.device_type}
+          />
         </div>
         <InputNumber
           min={1}

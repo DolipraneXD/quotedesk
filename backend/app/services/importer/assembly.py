@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Configuration, ImportRow, Product
+from app.models.catalog import DEVICE_TYPES
 from app.services import configurations
 
 RATE_QUANT = Decimal("0.000001")
@@ -94,6 +95,10 @@ def expand_parts(row: dict[str, Any]) -> list[dict[str, Any]]:
         return [row]
     _merge_unit_prices(row)
     row["assembly"], row["assembly_role"] = key, "unit"
+    # a tablet's parts are tablet parts: the picker of a PC build hides them
+    device = row.get("category_code") if row.get("category_code") in DEVICE_TYPES else None
+    if device:
+        row["device_type"] = device
     rate = _unit_rate(row)
     fallback = next((p.get("fx_rate") for p in row.get("prices") or [] if p.get("fx_rate")), None)
     date = next((p.get("date") for p in row.get("prices") or [] if p.get("date")), None)
@@ -135,6 +140,7 @@ def expand_parts(row: dict[str, Any]) -> list[dict[str, Any]]:
                 "issues": [],
                 "assembly": key,
                 "assembly_role": "part",
+                **({"device_type": device} if device else {}),
                 **({"unit_fx_rate": str(rate)} if rate else {}),
             }
         )
@@ -194,6 +200,7 @@ def link_configurations(session: Session, rows: list[ImportRow]) -> list[dict[st
                     "name_zh": unit.name_zh,
                     "model_no": key,
                     "platform": unit.platform,
+                    "device_type": unit.device_type,
                     "items": items,
                 },
             )

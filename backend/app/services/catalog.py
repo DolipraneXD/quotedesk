@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.errors import ProblemError
 from app.models import Brand, Category, PriceHistory, Product, ProductAlias
-from app.models.catalog import PRICE_TIERS, PRODUCT_STATUSES
+from app.models.catalog import DEVICE_TYPES, PRICE_TIERS, PRODUCT_STATUSES
 from app.services import search
 from app.services.brands import BrandResolver
 from app.services.importer.normalize import (
@@ -30,7 +30,7 @@ PRODUCT_FIELDS = (
     "confirm_before_order", "lead_time_confirm", "needs_validation", "quote_on_request",
     "recommended", "stock_qty", "demand_qty", "stock_after_qty", "max_order_qty",
     "from_stock_qty", "payment_terms", "supply_note", "market", "notes_raw", "platform",
-    "is_manual", "description_zh", "description_en", "model_no", "material",
+    "device_type", "is_manual", "description_zh", "description_en", "model_no", "material",
 )  # fmt: skip
 
 
@@ -177,6 +177,7 @@ def _check_status(status: str | None) -> None:
 
 
 def create_product(session: Session, data: dict[str, Any]) -> Product:
+    _check_device(data.get("device_type"))
     category = _get_category(session, data["category_id"])
     brand = _get_brand(session, data.get("brand_id"))
     _check_status(data.get("status"))
@@ -205,8 +206,14 @@ def create_product(session: Session, data: dict[str, Any]) -> Product:
     return product
 
 
+def _check_device(device: Any) -> None:
+    if device is not None and device not in DEVICE_TYPES:
+        raise ProblemError(422, "product.bad_device", "Unknown device type", device=device)
+
+
 def update_product(session: Session, product: Product, data: dict[str, Any]) -> Product:
     _check_status(data.get("status"))
+    _check_device(data.get("device_type"))
     category = _get_category(session, data["category_id"]) if "category_id" in data else None
     if category is not None:
         product.category = category

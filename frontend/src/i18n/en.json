@@ -299,7 +299,8 @@
       "invalid_attribute": "Invalid value for {{key}}",
       "invalid_status": "Unknown status",
       "merge_self": "A product cannot be merged into itself",
-      "name_required": "The Chinese name is required"
+      "name_required": "The Chinese name is required",
+      "bad_device": "Unknown device type"
     },
     "price": {
       "negative": "Price cannot be negative",
@@ -857,5 +858,21 @@
     "restored": "Restored. The data from before is in {{safety}}.",
     "retention": "Keep the last",
     "retentionHelp": "Older automatic and manual database copies are deleted beyond this number."
+  },
+  "device": {
+    "label": "Device",
+    "pc": "Desktop PC",
+    "laptop": "Laptop",
+    "tablet": "Tablet",
+    "general": "General (any device)",
+    "all": "All devices",
+    "productHelp": "What this part is for. Leave empty for a part that fits any device: it shows in every build.",
+    "configHelp": "The part picker below starts on this device: other devices' parts are hidden, general parts still show.",
+    "mini_pc": "Mini PC",
+    "nas": "NAS",
+    "workstation": "Workstation",
+    "server": "Server",
+    "smart_ring": "Smart ring",
+    "health_tracker": "Health tracker"
   }
 }

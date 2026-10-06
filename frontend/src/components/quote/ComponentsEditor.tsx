@@ -168,7 +168,7 @@ export default function ComponentsEditor({
       {!readOnly && (
         <Space wrap style={{ marginTop: 8 }}>
           <div style={{ width: 360 }}>
-            <ProductPicker value={productId} onChange={setProductId} />
+            <ProductPicker value={productId} onChange={setProductId} deviceFilter />
           </div>
           <InputNumber
             min={1}

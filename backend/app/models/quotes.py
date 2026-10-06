@@ -141,6 +141,7 @@ class Configuration(TimestampMixin, Base):
     name_zh: Mapped[str | None] = mapped_column(String(300))
     notes: Mapped[str | None] = mapped_column(Text)  # internal, never printed
     platform: Mapped[str | None] = mapped_column(String(120))
+    device_type: Mapped[str | None] = mapped_column(String(20))  # filters the part picker
     model_no: Mapped[str | None] = mapped_column(String(120))
     material: Mapped[str | None] = mapped_column(String(120))
     base_margin_pct: Mapped[Decimal | None] = mapped_column(Money, nullable=True)

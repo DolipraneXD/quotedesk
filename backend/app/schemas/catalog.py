@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.catalog import DeviceType
+
 
 class AttributeField(BaseModel):
     key: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
@@ -143,6 +145,7 @@ class ProductOut(BaseModel):
     market: str | None
     notes_raw: str | None
     platform: str | None
+    device_type: str | None = None
     is_manual: bool
     description_zh: str | None
     description_en: str | None
@@ -183,6 +186,7 @@ class _ProductFields(BaseModel):
     market: str | None = None
     notes_raw: str | None = None
     platform: str | None = None
+    device_type: DeviceType | None = None
     description_zh: str | None = None
     description_en: str | None = None
     model_no: str | None = None

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from './client'
 import { quotesKey, upload, type DescriptionLine, type QuoteStatus } from './quotes'
-import type { Money } from './types'
+import type { DeviceType, Money } from './types'
 
 export type Condition = 'new' | 'used'
 
@@ -36,6 +36,7 @@ export interface Configuration {
   name_zh: string | null
   notes: string | null
   platform: string | null
+  device_type: DeviceType | null
   model_no: string | null
   material: string | null
   base_margin_pct: Money | null
@@ -55,6 +56,7 @@ export interface ConfigurationSummary {
   name: string
   name_zh: string | null
   platform: string | null
+  device_type: DeviceType | null
   model_no: string | null
   parts: number
   unit_cost: Money | null
@@ -80,7 +82,14 @@ export interface ConfigurationUsage {
 export type ConfigurationPatch = Partial<
   Pick<
     Configuration,
-    'name' | 'name_zh' | 'notes' | 'platform' | 'model_no' | 'material' | 'base_margin_pct'
+    | 'name'
+    | 'name_zh'
+    | 'notes'
+    | 'platform'
+    | 'device_type'
+    | 'model_no'
+    | 'material'
+    | 'base_margin_pct'
   >
 > & { items?: ConfigurationItemInput[] }
 

@@ -30,6 +30,8 @@ dashboard, backups and the Windows desktop build.
    A complete-unit cost sheet (整机成本 plus part columns: 屏, 摄像头, 电池, PCBA …) imports the unit
    (e.g. a **Tablet**) and each priced part as products, and commit saves a configuration holding
    those parts, so the unit can be quoted with its breakdown.
+   Products and configurations have a **device type** (PC, laptop, tablet; empty = general). The part
+   picker filters by it, so a PC build doesn't list tablet parts.
 3. **Extract**: the AI reads spreadsheets in batches of 60 rows, and each screenshot or PDF page in one
    go (progress is live; you can cancel).
 4. **Review**: every row is New / Updated / Unchanged / Possible match / Problem. Open a row to compare it

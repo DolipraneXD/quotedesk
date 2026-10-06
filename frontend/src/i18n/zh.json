@@ -299,7 +299,8 @@
       "invalid_attribute": "{{key}} 的值无效",
       "invalid_status": "未知状态",
       "merge_self": "不能将产品合并到自身",
-      "name_required": "中文名称为必填项"
+      "name_required": "中文名称为必填项",
+      "bad_device": "未知的设备类型"
     },
     "price": {
       "negative": "价格不能为负数",
@@ -857,5 +858,21 @@
     "restored": "已恢复。恢复前的数据保存在 {{safety}}。",
     "retention": "保留最近",
     "retentionHelp": "超过此数量的较早数据库副本（自动和手动）会被删除。"
+  },
+  "device": {
+    "label": "设备类型",
+    "pc": "台式机",
+    "laptop": "笔记本",
+    "tablet": "平板",
+    "general": "通用（任何设备）",
+    "all": "全部设备",
+    "productHelp": "这个部件用于哪类设备。留空表示通用部件，所有整机配置都能选到。",
+    "configHelp": "下方选择部件时默认只显示该设备的部件（以及通用部件），其他设备的部件会被隐藏。",
+    "mini_pc": "迷你主机",
+    "nas": "NAS",
+    "workstation": "工作站",
+    "server": "服务器",
+    "smart_ring": "智能戒指",
+    "health_tracker": "健康监测设备"
   }
 }

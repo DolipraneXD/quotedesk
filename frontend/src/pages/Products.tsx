@@ -34,6 +34,7 @@ import { attributeSummary } from '../lib/attributes'
 import { errorMessage, localName } from '../lib/i18n-helpers'
 import { formatCost } from '../lib/money'
 import { useDebounced } from '../lib/useDebounced'
+import { DEVICE_TYPES } from '../lib/devices'
 
 const OPTIONAL_COLUMNS = [
   'erp_code',
@@ -42,6 +43,7 @@ const OPTIONAL_COLUMNS = [
   'stock_qty',
   'stock_after_qty',
   'platform',
+  'device_type',
   'notes_raw',
 ] as const
 type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number]
@@ -84,6 +86,8 @@ export default function Products() {
     category: num('category'),
     brand: num('brand'),
     status: params.get('status') ?? undefined,
+    device: (params.get('device') as ProductQuery['device']) ?? undefined,
+    include_general: params.get('device') ? false : undefined,
     page: num('page') ?? 1,
     page_size: num('page_size') ?? 50,
     sort: (params.get('sort') as ProductQuery['sort']) ?? 'name',
@@ -168,6 +172,12 @@ export default function Products() {
         v !== null && v < 0 ? <Typography.Text type="danger">{v}</Typography.Text> : v,
     },
     platform: { title: t('product.platform'), dataIndex: 'platform', width: 110 },
+    device_type: {
+      title: t('device.label'),
+      dataIndex: 'device_type',
+      width: 100,
+      render: (d: Product['device_type']) => (d ? t(`device.${d}`) : '—'),
+    },
     notes_raw: {
       title: t('product.notes_raw'),
       dataIndex: 'notes_raw',
@@ -381,6 +391,17 @@ export default function Products() {
           value={query.status}
           onChange={(v) => setParam({ status: v })}
           options={PRODUCT_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
+        />
+        <Select
+          allowClear
+          placeholder={t('device.label')}
+          style={{ width: 140 }}
+          value={query.device}
+          onChange={(v) => setParam({ device: v })}
+          options={[
+            ...DEVICE_TYPES.map((d) => ({ value: d, label: t(`device.${d}`) })),
+            { value: 'none', label: t('device.general') },
+          ]}
         />
         <Popover trigger="click" content={columnChooser} title={t('product.columns')}>
           <Button icon={<SettingOutlined />}>{t('product.columns')}</Button>

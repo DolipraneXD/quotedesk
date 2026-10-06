@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.catalog import DeviceType
+
 
 class CustomerFields(BaseModel):
     name: str | None = Field(default=None, max_length=200)
@@ -327,6 +329,7 @@ class ConfigurationFields(BaseModel):
     name_zh: str | None = Field(default=None, max_length=300)
     notes: str | None = None
     platform: str | None = Field(default=None, max_length=120)
+    device_type: DeviceType | None = None
     model_no: str | None = Field(default=None, max_length=120)
     material: str | None = Field(default=None, max_length=120)
     base_margin_pct: Decimal | None = Field(default=None, ge=-100, le=1000)
@@ -362,6 +365,7 @@ class ConfigurationOut(BaseModel):
     name_zh: str | None
     notes: str | None
     platform: str | None
+    device_type: str | None = None
     model_no: str | None
     material: str | None
     base_margin_pct: Decimal | None
@@ -381,6 +385,7 @@ class ConfigurationSummary(BaseModel):
     name: str
     name_zh: str | None
     platform: str | None
+    device_type: str | None = None
     model_no: str | None
     parts: int
     unit_cost: Decimal | None

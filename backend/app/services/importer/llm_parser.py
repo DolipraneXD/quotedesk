@@ -247,7 +247,8 @@ Other fields
 - Complete-unit cost sheets (整机成本 BOMs): one row per finished product (for example a
   tablet) with its 整机成本 and USD price, followed by one column per part (屏, TP, 摄像头, 电池,
   壳料, 喇叭, 适配器, 线材, 包装, 其他, PCBA, 存储 ...), each with its spec text and its own
-  amount. Return the finished product as one row: its category (a tablet is "tablet"),
+  amount. Return the finished product as one row: its category (tablet, laptop, pc,
+  mini_pc, nas, workstation, server, smart_ring or health_tracker for a finished device),
   model = 项目名称, price = 整机成本 with its USD column as usual, and the specs as attributes.
   List EVERY part column in that row's parts, left to right: label = the column header,
   spec = the spec text, amount = the part's amount exactly as written (null for "/", "-" or

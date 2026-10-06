@@ -65,10 +65,7 @@ const PROVIDERS: {
   provider: LlmProvider
   keyField: keyof ApiKeysIn
   keySetField:
-    | 'anthropic_api_key_set'
-    | 'gemini_api_key_set'
-    | 'groq_api_key_set'
-    | 'inception_api_key_set'
+    'anthropic_api_key_set' | 'gemini_api_key_set' | 'groq_api_key_set' | 'inception_api_key_set'
   modelField: 'llm_model' | 'gemini_model' | 'groq_model' | 'inception_model'
   placeholder: string
 }[] = [
@@ -157,8 +154,7 @@ function GeneralTab() {
 
   const persist = async (values: FormValues) => {
     if (!settings.data) return
-    const { anthropic_api_key, gemini_api_key, groq_api_key, inception_api_key, ...rest } =
-      values
+    const { anthropic_api_key, gemini_api_key, groq_api_key, inception_api_key, ...rest } = values
     await save.mutateAsync({
       ...settings.data,
       ...rest,

@@ -25,7 +25,7 @@ def brand_id(client, canonical):
 
 
 def test_seeded_reference_data(client, categories):
-    assert len(categories) == 23
+    assert len(categories) == 31
     assert categories["cpu"]["is_main"] is True
     assert categories["camera"]["is_main"] is False
     ram_keys = [f["key"] for f in categories["ram_module"]["attribute_schema"]]
@@ -39,7 +39,7 @@ def test_seed_is_idempotent(client, session):
     from app.seed import seed
 
     seed(session)
-    assert len(client.get(f"{API}/categories").json()) == 23
+    assert len(client.get(f"{API}/categories").json()) == 31
 
 
 def test_create_and_get_product(client, categories):

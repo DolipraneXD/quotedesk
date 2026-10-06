@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 from sqlalchemy import JSON, Boolean, Date, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,6 +14,13 @@ if TYPE_CHECKING:
     from app.models.quotes import ProductImage
 
 PRODUCT_STATUSES = ("active", "discontinued", "stock_only", "no_supply", "inactive")
+# What a product is, or a part is for; None = general, fits any device. Each one is also
+# the code of the category of that finished product, so a BOM import labels its parts.
+DeviceType = Literal[
+    "pc", "mini_pc", "laptop", "tablet", "nas", "workstation", "server", "smart_ring",
+    "health_tracker",
+]  # fmt: skip
+DEVICE_TYPES: tuple[str, ...] = get_args(DeviceType)
 PRICE_TIERS = ("standard", "forecast")
 
 
@@ -98,6 +105,7 @@ class Product(TimestampMixin, Base):
     market: Mapped[str | None] = mapped_column(String(40))
     notes_raw: Mapped[str | None] = mapped_column(Text)
     platform: Mapped[str | None] = mapped_column(String(120))
+    device_type: Mapped[str | None] = mapped_column(String(20), index=True)  # DEVICE_TYPES
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
     description_zh: Mapped[str | None] = mapped_column(Text)
     description_en: Mapped[str | None] = mapped_column(Text)

@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from fastapi import APIRouter, Query, Response
-from sqlalchemy import Float, cast, func, select
+from sqlalchemy import Float, cast, func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app.api.deps import SessionDep
 from app.errors import ProblemError
 from app.models import PriceHistory, Product, ProductAlias
+from app.models.catalog import DEVICE_TYPES
 from app.schemas.catalog import (
     MergeRequest,
     PriceCreate,
@@ -54,6 +55,8 @@ def list_products(
     category: int | None = None,
     brand: int | None = None,
     status: str | None = None,
+    device: str | None = None,  # a DEVICE_TYPES value, or "none" for general products
+    include_general: bool = True,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     sort: Literal["name", "price", "updated", "created", "price_date"] = "name",
@@ -70,6 +73,14 @@ def list_products(
         stmt = stmt.where(Product.brand_id == brand)
     if status:
         stmt = stmt.where(Product.status == status)
+    if device is not None and device != "none" and device not in DEVICE_TYPES:
+        raise ProblemError(422, "product.bad_device", "Unknown device type", device=device)
+    if device == "none":
+        stmt = stmt.where(Product.device_type.is_(None))
+    elif device and include_general:  # the part picker: this device's parts and general ones
+        stmt = stmt.where(or_(Product.device_type == device, Product.device_type.is_(None)))
+    elif device:
+        stmt = stmt.where(Product.device_type == device)
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     key = SORT_KEYS[sort]

@@ -24,8 +24,8 @@ from app.models import (
 )
 from app.services import quotes
 
-FIELDS = ("name", "name_zh", "notes", "platform", "model_no", "material", "base_margin_pct",
-          "image_ids")  # fmt: skip
+FIELDS = ("name", "name_zh", "notes", "platform", "device_type", "model_no", "material",
+          "base_margin_pct", "image_ids")  # fmt: skip
 
 
 def get(session: Session, config_id: int) -> Configuration:

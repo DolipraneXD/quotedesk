@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.errors import ProblemError
 from app.models import Category, NoteRule, Product, ProductAlias
+from app.models.catalog import DEVICE_TYPES
 from app.services.brands import BrandResolver
 from app.services.catalog import clean_attributes, erp_codes_of
 from app.services.importer.normalize import brand_key, compute_fingerprint, split_erp_codes
@@ -319,6 +320,7 @@ def analyze_row(
         "prices": prices,
         "no_price_reason": row.get("no_price_reason"),
         **unit,
+        "device_type": row.get("device_type") if row.get("device_type") in DEVICE_TYPES else None,
     }
 
     # Matching precedence: ERP code, MPN within category, fingerprint, fuzzy name.

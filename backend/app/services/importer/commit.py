@@ -26,7 +26,7 @@ RESTORABLE_FIELDS = (
     "category_id", "brand_id", "name_zh", "name_en", "name_en_auto", "attributes", "erp_code",
     "erp_code_alt", "mpn", "status", *FLAG_FIELDS, "stock_qty", "demand_qty", "stock_after_qty",
     "max_order_qty", "from_stock_qty", "payment_terms", "supply_note", "market", "notes_raw",
-    "platform", "last_import_id",
+    "platform", "device_type", "last_import_id",
 )  # fmt: skip
 
 
@@ -75,6 +75,7 @@ def _product_data(staged: dict[str, Any], brand_id: int | None) -> dict[str, Any
         "attributes": staged["attributes"],
         "mpn": staged.get("mpn"),
         **{k: v for k, v in fields.items()},
+        **({"device_type": staged["device_type"]} if staged.get("device_type") else {}),
     }
 
 

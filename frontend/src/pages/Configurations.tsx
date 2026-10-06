@@ -91,6 +91,12 @@ export default function Configurations() {
             ),
           },
           { title: t('config.platform'), dataIndex: 'platform', width: 140 },
+          {
+            title: t('device.label'),
+            dataIndex: 'device_type',
+            width: 100,
+            render: (d: ConfigurationSummary['device_type']) => (d ? t(`device.${d}`) : '—'),
+          },
           { title: t('config.parts'), dataIndex: 'parts', width: 80, align: 'right' },
           {
             title: t('config.unitCost'),

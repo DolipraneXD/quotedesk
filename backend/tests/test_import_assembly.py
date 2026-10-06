@@ -94,6 +94,9 @@ def test_unit_and_parts_become_products_and_a_configuration(client, fake):
     config = client.get(f"{API}/configurations/{configs[0]['id']}").json()
     assert config["model_no"] == TABLET and config["name_zh"] == f"{TABLET} 整机"
     assert len(config["items"]) == 12 and all(i["product_id"] for i in config["items"])
+    assert config["device_type"] == "tablet"
+    products = client.get(f"{API}/products", params={"page_size": 100}).json()["items"]
+    assert {p["device_type"] for p in products} == {"tablet"}  # the unit and its parts
     assert abs(Decimal(config["unit_cost"]) - Decimal("150.38")) < Decimal("0.001")
 
     # importing the same BOM again refreshes that configuration instead of adding one
@@ -106,3 +109,47 @@ def test_unit_and_parts_become_products_and_a_configuration(client, fake):
     assert client.post(f"{API}/imports/{imp['id']}/revert").status_code == 200
     assert client.get(f"{API}/configurations").json() == []
     assert client.get(f"{API}/products").json()["total"] == 0
+
+
+def test_device_filter_hides_other_devices_parts(client):
+    cat = {c["code"]: c["id"] for c in client.get(f"{API}/categories").json()}
+
+    def make(name: str, device: str | None) -> int:
+        body = {"category_id": cat["battery"], "name_zh": name, "device_type": device}
+        res = client.post(f"{API}/products", json=body)
+        assert res.status_code == 201, res.json()
+        return res.json()["id"]
+
+    tablet, pc, general = make("平板电池", "tablet"), make("PC电池", "pc"), make("通用电池", None)
+
+    def ids(**params) -> set[int]:
+        items = client.get(f"{API}/products", params=params).json()["items"]
+        return {p["id"] for p in items}
+
+    assert ids(device="pc") == {pc, general}  # the part picker of a PC build
+    assert ids(device="tablet") == {tablet, general}
+    assert ids(device="tablet", include_general="false") == {tablet}  # Products page filter
+    assert ids(device="none") == {general}
+    res = client.patch(f"{API}/products/{general}", json={"device_type": "laptop"})
+    assert res.json()["device_type"] == "laptop"
+    res = client.patch(f"{API}/products/{general}", json={"device_type": None})
+    assert res.json()["device_type"] is None
+    res = client.patch(f"{API}/products/{general}", json={"device_type": "phone"})
+    assert res.status_code == 422
+
+
+def test_every_device_type_is_a_category_so_any_bom_labels_its_parts(client):
+    from app.models.catalog import DEVICE_TYPES
+
+    codes = {c["code"] for c in client.get(f"{API}/categories").json()}
+    assert set(DEVICE_TYPES) <= codes
+    unit = {
+        "category_code": "mini_pc", "name_zh": "AXN88-H01-SZ-R52",
+        "attributes": [{"key": "model", "value": "AXN88-H01-SZ-R52"}], "prices": [],
+        "parts": [{"label": "主板", "spec": "AXN88", "category_code": "motherboard",
+                   "amount": Decimal("900"), "generic": False}],
+    }  # fmt: skip
+    out = assembly.expand_parts(unit)
+    assert [r["device_type"] for r in out] == ["mini_pc", "mini_pc"]
+    res = client.get(f"{API}/products", params={"device": "phone"})
+    assert res.status_code == 422 and res.json()["key"] == "product.bad_device"

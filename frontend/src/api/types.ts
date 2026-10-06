@@ -113,6 +113,7 @@ export interface Product {
   market: string | null
   notes_raw: string | null
   platform: string | null
+  device_type: DeviceType | null
   is_manual: boolean
   description_zh: string | null
   description_en: string | null
@@ -122,6 +123,17 @@ export interface Product {
   created_at: string
   updated_at: string
 }
+
+export type DeviceType =
+  | 'pc'
+  | 'mini_pc'
+  | 'laptop'
+  | 'tablet'
+  | 'nas'
+  | 'workstation'
+  | 'server'
+  | 'smart_ring'
+  | 'health_tracker'
 
 export interface ProductList {
   items: Product[]
@@ -135,6 +147,9 @@ export interface ProductQuery {
   category?: number
   brand?: number
   status?: string
+  /** this device's products; general ones too unless include_general is false */
+  device?: DeviceType | 'none'
+  include_general?: boolean
   page?: number
   page_size?: number
   sort?: 'name' | 'price' | 'updated' | 'created' | 'price_date'

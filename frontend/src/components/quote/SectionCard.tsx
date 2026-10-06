@@ -479,7 +479,7 @@ export default function SectionCard({
       {!readOnly && (
         <Space wrap style={{ marginTop: 12, width: '100%' }}>
           <div style={{ width: 420 }}>
-            <ProductPicker value={productId} onChange={setProductId} />
+            <ProductPicker value={productId} onChange={setProductId} deviceFilter />
           </div>
           <InputNumber min={1} precision={0} value={qty} onChange={(v) => setQty(v ?? 1)} />
           <Button

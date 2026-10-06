@@ -167,6 +167,9 @@ export default function ProductDetail() {
               <Descriptions.Item label={t('product.platform')}>
                 {show(p.platform)}
               </Descriptions.Item>
+              <Descriptions.Item label={t('device.label')}>
+                {p.device_type ? t(`device.${p.device_type}`) : t('device.general')}
+              </Descriptions.Item>
               <Descriptions.Item label={t('product.stock_qty')}>
                 {show(p.stock_qty)}
               </Descriptions.Item>

@@ -54,6 +54,15 @@ EXTRA_SCHEMA = [
 
 GENERIC_SCHEMA = [MODEL, SPEC]
 
+# a wearable device: identified by its model, the rest is its spec sheet
+WEARABLE_SCHEMA = [
+    MODEL,
+    f("sensors", "Sensors", "传感器"),
+    f("battery_life", "Battery life", "续航"),
+    f("size", "Size", "尺寸"),
+    SPEC,
+]
+
 # a complete unit; its parts are separate products, linked by a configuration
 UNIT_SCHEMA = [
     MODEL,
@@ -145,6 +154,8 @@ SCHEMAS: dict[str, list[dict[str, Any]]] = {
         f("vendor_module", "Module vendor", "模组厂商"),
     ],
     "tablet": UNIT_SCHEMA,
+    **{code: UNIT_SCHEMA for code in ("pc", "mini_pc", "laptop", "nas", "workstation", "server")},
+    **{code: WEARABLE_SCHEMA for code in ("smart_ring", "health_tracker")},
     "motherboard": [
         f("model", "Model", "机型", fp=True),
         f("sku", "SKU", "SKU", fp=True),
@@ -197,6 +208,15 @@ CATEGORIES: list[tuple[str, str, str, bool]] = [
     ("service", "Service", "服务", False),
     ("other", "Other", "其他", False),
     ("tablet", "Tablet", "平板电脑", True),
+    # finished devices (Sixunited product lines); same codes as the device types
+    ("pc", "Desktop PC", "台式机", True),
+    ("mini_pc", "Mini PC", "迷你主机", True),
+    ("laptop", "Laptop", "笔记本电脑", True),
+    ("nas", "NAS", "NAS", True),
+    ("workstation", "Workstation", "工作站", True),
+    ("server", "Server", "服务器", True),
+    ("smart_ring", "Smart ring", "智能戒指", True),
+    ("health_tracker", "Health tracker", "健康监测设备", True),
 ]
 
 # canonical, name_zh, extra aliases
