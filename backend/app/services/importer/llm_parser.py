@@ -102,6 +102,18 @@ def output_schema(category_codes: Sequence[str]) -> dict[str, Any]:
         ],
         "additionalProperties": False,
     }  # fmt: skip
+    part = {
+        "type": "object",
+        "properties": {
+            "label": {"type": "string"},
+            "spec": {"type": "string"},
+            "category_code": {"type": "string", "enum": list(category_codes)},
+            "amount": NULLABLE_NUMBER,
+            "generic": {"type": "boolean"},
+        },
+        "required": ["label", "spec", "category_code", "amount", "generic"],
+        "additionalProperties": False,
+    }
     row = {
         "type": "object",
         "properties": {
@@ -128,13 +140,14 @@ def output_schema(category_codes: Sequence[str]) -> dict[str, Any]:
             "stock_after_qty": NULLABLE_INT,
             "notes_raw": NULLABLE_STRING,
             "platform": NULLABLE_STRING,
+            "parts": {"type": "array", "items": part},
             "confidence": {"type": "number"},
             "issues": {"type": "array", "items": {"type": "string"}},
         },
         "required": [
             "source_row", "category_code", "name_zh", "name_en", "brand", "erp_codes", "mpn",
             "attributes", "prices", "no_price_reason", "stock_qty", "demand_qty",
-            "stock_after_qty", "notes_raw", "platform", "confidence", "issues",
+            "stock_after_qty", "notes_raw", "platform", "parts", "confidence", "issues",
         ],
         "additionalProperties": False,
     }  # fmt: skip
@@ -231,6 +244,18 @@ Other fields
 - Motherboard cost sheets (机型, SKU, PCB, Others, SMT, TTL): one product per 机型 + SKU row,
   category "motherboard", price = TTL, and the PCB / Others / SMT / TTL amounts as attributes
   cost_pcb, cost_others, cost_smt, cost_ttl.
+- Complete-unit cost sheets (整机成本 BOMs): one row per finished product (for example a
+  tablet) with its 整机成本 and USD price, followed by one column per part (屏, TP, 摄像头, 电池,
+  壳料, 喇叭, 适配器, 线材, 包装, 其他, PCBA, 存储 ...), each with its spec text and its own
+  amount. Return the finished product as one row: its category (a tablet is "tablet"),
+  model = 项目名称, price = 整机成本 with its USD column as usual, and the specs as attributes.
+  List EVERY part column in that row's parts, left to right: label = the column header,
+  spec = the spec text, amount = the part's amount exactly as written (null for "/", "-" or
+  empty), category_code = the part's category (屏 display, 摄像头 camera, 电池 battery, 壳料
+  case, 适配器 adapter, 线材 cable, PCBA motherboard, 存储 emmc, 组装费 service; other when
+  nothing fits), generic = true when the spec alone does not identify a specific part
+  (整套, 预估, 组装费, 运费, 资源料). Do not return the parts as rows of their own. Rows of
+  ordinary price lists have an empty parts list.
 - confidence: 0 to 1, how sure you are the row is extracted correctly. issues: short notes on
   anything ambiguous (for example "two price columns, took the right-most").
 

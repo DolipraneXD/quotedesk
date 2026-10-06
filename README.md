@@ -27,6 +27,9 @@ dashboard, backups and the Windows desktop build.
    Screenshots dropped together become one import. Every sheet, screenshot and PDF page is listed;
    price-like visible sheets are pre-ticked (tick hidden ones if needed). A category hint per source is
    optional.
+   A complete-unit cost sheet (整机成本 plus part columns: 屏, 摄像头, 电池, PCBA …) imports the unit
+   (e.g. a **Tablet**) and each priced part as products, and commit saves a configuration holding
+   those parts, so the unit can be quoted with its breakdown.
 3. **Extract**: the AI reads spreadsheets in batches of 60 rows, and each screenshot or PDF page in one
    go (progress is live; you can cancel).
 4. **Review**: every row is New / Updated / Unchanged / Possible match / Problem. Open a row to compare it

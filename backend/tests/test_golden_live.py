@@ -37,7 +37,9 @@ pytestmark = [
 @pytest.fixture(params=PROVIDERS or ["anthropic"])
 def live(request, client, monkeypatch):
     provider = request.param
-    if provider in TEXT_ONLY and request.node.name.startswith("test_screenshots"):
+    if provider in TEXT_ONLY and request.node.name.startswith(
+        ("test_screenshots", "test_tablet_bom")
+    ):
         pytest.skip(f"{provider} reads text only")
     monkeypatch.setenv(API_KEY_VARS[provider], KEYS[provider] or "")
     monkeypatch.setattr(pipeline, "spawn", lambda target: target())
@@ -183,3 +185,21 @@ def test_ups_quotation_pdf(live):
         ("ups", Decimal("490")), ("ups", Decimal("943")),
     ]  # fmt: skip
     assert imp["stats"]["new"] == 6  # the two cabinets are two products
+
+
+def test_tablet_bom_screenshot(live):
+    imp = run(live, "img_tablet_bom.png", ["img_tablet_bom.png"], {})
+    items = live.get(f"{API}/imports/{imp['id']}/rows", params={"page_size": 1000}).json()
+    got = [r["parsed"]["staged"] | {"issues": r["issues"]} for r in items["items"]]
+    units = [st for st in got if st["assembly_role"] == "unit"]
+    assert len(units) == 1 and units[0]["category_code"] == "tablet"
+    parts = [st for st in got if st["assembly_role"] == "part"]
+    assert len(parts) == 12, [p["name_zh"] for p in parts]  # 16 part columns, 4 at ¥0
+    assert {p["category_code"] for p in parts} >= {"display", "camera", "battery", "motherboard"}
+    total = sum((usd(st) or Decimal(0) for st in parts), Decimal(0))
+    adds_up = abs(total - (usd(units[0]) or Decimal(0))) < Decimal("0.01")
+    flagged = any(i["code"] == "parts_total" for i in units[0]["issues"])
+    assert adds_up or flagged  # a misread amount is always pointed out in review
+    assert live.post(f"{API}/imports/{imp['id']}/commit").status_code == 200
+    (config,) = live.get(f"{API}/configurations").json()
+    assert config["model_no"] == units[0]["assembly"]

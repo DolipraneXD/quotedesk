@@ -47,6 +47,7 @@ def row(source_row: int, category: str, name_zh: str, **kw: Any) -> dict[str, An
         "stock_after_qty": kw.get("stock_after_qty"),
         "notes_raw": kw.get("notes_raw"),
         "platform": kw.get("platform"),
+        "parts": kw.get("parts", []),
         "confidence": Decimal(kw.get("confidence", "0.95")),
         "issues": kw.get("issues", []),
     }
@@ -352,12 +353,68 @@ UPS_PDF = [
                "standard battery cabinets,Size：780*470*620mm", "59", size_mm="780*470*620"),
 ]  # fmt: skip
 
+# img_tablet_bom.png: a 整机成本 BOM, one tablet and the parts it is costed from (RMB 含税)
+TABLET = "M8755-K1J-110HJ"
+
+
+def part(label: str, spec: str, category: str, cny: str | None, generic: bool = False):
+    return {"label": label, "spec": spec, "category_code": category,
+            "amount": Decimal(cny) if cny else None, "generic": generic}  # fmt: skip
+
+
+TABLET_BOM = [
+    row(
+        1,
+        "tablet",
+        f"{TABLET} 整机",
+        name_en=f"{TABLET} complete unit",
+        attributes={
+            "model": TABLET,
+            "screen": "10.95寸/1920*1200/incell/500nits",
+            "memory_config": "8+256G",
+            "market": "印度",
+        },
+        prices=[
+            price(
+                "150.38",
+                "",
+                original_amount="1141.53",
+                original_currency="CNY",
+                fx_rate="6.7175",
+                date="2026-09-28",
+            )
+        ],
+        parts=[
+            part("屏", "10.95寸/1920*1200/incell/500nits/不支持主动笔", "display", "165.00"),
+            part("TP", "/", "other", None),
+            part("摄像头", "mipi/前5M FF+后8M AF(带光距感)", "camera", "26.50"),
+            part("电池", "3.8V/8000mAh 不带电量计,带BIS认证", "battery", "62.22"),
+            part("壳料&螺丝", "半五金+白色镭雕LOGO", "case", "34.10"),
+            part("喇叭", "8Ω 1W (BOX)*2+Amic*1+马达", "other", "9.50"),
+            part("指纹模组", "/", "other", "0"),
+            part(
+                "适配器&数据线", "9V2A+C转C数据线USB2.0(0.8M)印度规,带BIS认证", "adapter", "19.30"
+            ),
+            part("线材", "屏线+按键FPC+TYPE-C小板+DOCKING线+5G天线", "cable", "36.60"),
+            part("辅料及小五金", "整套", "other", "6.00", generic=True),
+            part("标贴&包装", "天地盖预估", "other", "15.00", generic=True),
+            part("电容笔", "/", "other", "0"),
+            part("键盘&皮套", "/", "other", "0"),
+            part("其他", "组装费+材料运费分摊", "service", "31.00", generic=True),
+            part("PCBA(不含存储)", "M8755(K1) 5G版", "motherboard", "356.77"),
+            part("存储", "8+256G 资源料", "emmc", "379.54", generic=True),
+        ],
+    ),
+]
+
+
 MEDIA_RECORDED: dict[str, list[dict[str, Any]]] = {
     "img_dram_chips.jpg": DRAM_CHIPS,
     "img_ram_modules.jpg": RAM_SCREENSHOT,
     "img_ssd.jpg": SSD_SCREENSHOT,
     "img_cpu.jpg": CPU_SCREENSHOT,
     "Page 1": UPS_PDF,
+    "img_tablet_bom.png": TABLET_BOM,
 }
 
 RECORDED: dict[str, list[dict[str, Any]]] = {

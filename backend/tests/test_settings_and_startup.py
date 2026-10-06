@@ -163,7 +163,7 @@ def test_startup_creates_db_dirs_and_backup(data_dir):
     backups = list((data_dir / "backups").glob("app-*.db"))
     assert len(backups) == 1
     with closing(sqlite3.connect(backups[0])) as db:
-        assert db.execute("select count(*) from categories").fetchone()[0] == 22
+        assert db.execute("select count(*) from categories").fetchone()[0] == 23
 
 
 def test_migrations_downgrade_and_upgrade(client, data_dir):

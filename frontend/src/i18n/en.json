@@ -539,7 +539,9 @@
     "resetEdits": "Undo my changes",
     "sourceImage": "Source image",
     "imagePosition": "Row {{n}} of the table, counting from the top",
-    "zoomHint": "Click the image to zoom"
+    "zoomHint": "Click the image to zoom",
+    "unitConfigurations": "Complete units saved as configurations with their parts ({{count}}):",
+    "openConfiguration": "Configuration #{{id}}"
   },
   "issues": {
     "llm": "Model note: {{text}}",
@@ -568,10 +570,18 @@
       "duplicate_in_import": "Duplicate",
       "commit_failed": "Failed",
       "erp_variant": "Other ERP code",
-      "erp_conflict": "ERP conflict"
+      "erp_conflict": "ERP conflict",
+      "assembly_unit": "Complete unit",
+      "assembly_part": "Part",
+      "unit_fx": "Unit rate",
+      "parts_total": "Parts ≠ total"
     },
     "erp_variant": "Same specifications as “{{product}}” but a different ERP code: kept as a separate product",
-    "erp_conflict": "Matches the same product as “{{product}}” with a different ERP code: skipped. Fix the specifications or create it by hand"
+    "erp_conflict": "Matches the same product as “{{product}}” with a different ERP code: skipped. Fix the specifications or create it by hand",
+    "assembly_unit": "Complete unit {{unit}}: commit also saves its parts as configuration {{unit}}",
+    "assembly_part": "Part of {{unit}}: added to its configuration",
+    "unit_fx": "Rate {{rate}} taken from the {{unit}} row's own RMB and USD costs (includes VAT), so the parts add up to its USD cost",
+    "parts_total": "The parts add up to ¥{{parts}} but the unit costs ¥{{unit}}: check the part amounts against the source"
   },
   "customer": {
     "new": "New customer",
@@ -630,7 +640,6 @@
     "paymentTerms": "Payment terms",
     "notesHeader": "Note above the tables",
     "notesFooter": "Note below the tables",
-    "manageCustomers": "Add customers",
     "validUntil": "Valid until {{date}}",
     "preview": "Preview",
     "customerVersion": "Customer version",

@@ -149,6 +149,15 @@ def effective_row(source: dict[str, Any], edits: dict[str, Any]) -> dict[str, An
     return row
 
 
+def assembly_fields(row: dict[str, Any]) -> dict[str, Any]:
+    """The complete unit a row belongs to (a BOM: the unit row and its part rows)."""
+    key = (row.get("assembly") or "").strip()
+    role = row.get("assembly_role")
+    if not key or role not in ("unit", "part"):
+        return {"assembly": None, "assembly_role": None}
+    return {"assembly": key, "assembly_role": role}
+
+
 def stage_prices(
     row: dict[str, Any], sheet: SheetInfo, ctx: MatchContext, source_ref: str
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -264,6 +273,15 @@ def analyze_row(
 
     prices, price_issues = stage_prices(row, sheet, ctx, source_ref)
     issues.extend(price_issues)
+    unit = assembly_fields(row)
+    if unit["assembly_role"] == "unit":
+        issues.append(issue("assembly_unit", unit=unit["assembly"]))
+        if row.get("parts_total"):
+            issues.append(issue("parts_total", **row["parts_total"]))
+    elif unit["assembly_role"] == "part":
+        issues.append(issue("assembly_part", unit=unit["assembly"]))
+        if row.get("unit_fx_rate"):
+            issues.append(issue("unit_fx", unit=unit["assembly"], rate=row["unit_fx_rate"]))
 
     notes = " ".join(t for t in (row.get("notes_raw"), row.get("no_price_reason")) if t)
     flags = apply_note_rules(notes, ctx.rules)  # type: ignore[arg-type]
@@ -300,6 +318,7 @@ def analyze_row(
         "fields": fields,
         "prices": prices,
         "no_price_reason": row.get("no_price_reason"),
+        **unit,
     }
 
     # Matching precedence: ERP code, MPN within category, fingerprint, fuzzy name.

@@ -41,7 +41,6 @@ import {
   QUOTE_STATUSES,
   quotePdfUrl,
   quoteXlsxUrl,
-  useCustomers,
   useDeleteQuote,
   useQuote,
   useQuoteActions,
@@ -49,6 +48,7 @@ import {
   type QuotePatch,
   type QuoteStatus,
 } from '../api/quotes'
+import { CustomerPicker } from '../components/CustomerPicker'
 import ProformaCreateModal from '../components/quote/ProformaCreateModal'
 import SectionCard from '../components/quote/SectionCard'
 import { ProformaStatusTag, QuoteStatusTag } from '../components/quote/labels'
@@ -80,7 +80,6 @@ function toValues(quote: Quote): HeaderValues {
 function HeaderForm({ quote, readOnly }: { quote: Quote; readOnly: boolean }) {
   const { t } = useTranslation()
   const { message } = App.useApp()
-  const customers = useCustomers()
   const { patch } = useQuoteActions(quote.id)
   const [form] = Form.useForm<HeaderValues>()
   const timer = useRef<number | undefined>(undefined)
@@ -130,16 +129,7 @@ function HeaderForm({ quote, readOnly }: { quote: Quote; readOnly: boolean }) {
       <Row gutter={12}>
         <Col xs={24} md={8}>
           <Form.Item name="customer_id" label={t('quote.customer')}>
-            <Select
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              options={(customers.data ?? []).map((c) => ({
-                value: c.id,
-                label: `${c.code} · ${c.name}`,
-              }))}
-              notFoundContent={<Link to="/customers">{t('quote.manageCustomers')}</Link>}
-            />
+            <CustomerPicker />
           </Form.Item>
         </Col>
         <Col xs={12} md={4}>

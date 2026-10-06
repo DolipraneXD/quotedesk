@@ -330,12 +330,12 @@ def test_all_chunks_failing_marks_import_failed(client, fake):
 
 
 def test_unknown_category_is_a_problem_row(client, fake):
-    fake.recorded["Intel wifi"] = [row(4, "tablet", "平板电脑")]
+    fake.recorded["Intel wifi"] = [row(4, "smartwatch", "智能手表")]
     imp = upload(client, WIFI)
     imp = extract(client, imp, ["Intel wifi"])
     found = rows_of(client, imp)[0]
     assert found["status"] == "problem" and found["decision"] == "skip"
-    assert found["issues"][-1] == {"code": "unknown_category", "category": "tablet"}
+    assert found["issues"][-1] == {"code": "unknown_category", "category": "smartwatch"}
 
 
 # ------------------------------------------------------------------- review

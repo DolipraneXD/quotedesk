@@ -28,6 +28,7 @@ from app.config import active_model, data_dir, get_api_key, load_settings
 from app.db import session_factory
 from app.errors import ProblemError
 from app.models import Brand, Category, Import, ImportRow
+from app.services.importer import assembly
 from app.services.importer import extract_media as media
 from app.services.importer import extract_xlsx as xl
 from app.services.importer.llm_parser import (
@@ -402,7 +403,8 @@ def _raw_cells(unit: Unit, number: Any) -> dict[str, str]:
 
 
 def _store_rows(session: Session, imp: Import, items: list[tuple[Unit, dict[str, Any]]]) -> None:
-    for unit, row in items:
+    expanded = [(unit, out) for unit, row in items for out in assembly.expand_parts(row)]
+    for unit, row in expanded:
         number = row.get("source_row")
         session.add(
             ImportRow(

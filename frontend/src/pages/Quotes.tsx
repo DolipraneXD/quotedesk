@@ -22,7 +22,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   QUOTE_STATUSES,
   useCreateQuote,
-  useCustomers,
   useProformas,
   useQuotes,
   type DocLanguage,
@@ -30,6 +29,7 @@ import {
   type QuoteSummary,
   type SectionLayout,
 } from '../api/quotes'
+import { CustomerPicker } from '../components/CustomerPicker'
 import { ProformaStatusTag, QuoteStatusTag } from '../components/quote/labels'
 import { errorMessage } from '../lib/i18n-helpers'
 import { formatUsd } from '../lib/money'
@@ -39,7 +39,6 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
   const { t } = useTranslation()
   const { message } = App.useApp()
   const navigate = useNavigate()
-  const customers = useCustomers()
   const create = useCreateQuote()
   const [form] = Form.useForm<{
     customer_id?: number
@@ -70,19 +69,7 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
     >
       <Form form={form} layout="vertical" initialValues={{ layout: 'offer' }}>
         <Form.Item name="customer_id" label={t('quote.customer')} extra={t('quote.customerHelp')}>
-          <Select
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            options={(customers.data ?? []).map((c) => ({
-              value: c.id,
-              label: `${c.code} · ${c.name}`,
-            }))}
-            onChange={(id) => {
-              const customer = customers.data?.find((c) => c.id === id)
-              if (customer) form.setFieldValue('language', customer.language)
-            }}
-          />
+          <CustomerPicker onPick={(c) => form.setFieldValue('language', c.language)} />
         </Form.Item>
         <Form.Item name="layout" label={t('quote.layout')} extra={t('quote.layoutHelp')}>
           <Radio.Group

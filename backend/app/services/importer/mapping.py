@@ -131,6 +131,7 @@ def mapped_rows(grid: xl.SheetGrid, mapping: ColumnMapping) -> list[dict[str, An
             "prices": prices,
             "no_price_reason": (price_text or None) if amount is None else None,
             **{key: _int(get.get(key, "")) for key in INT_FIELDS},
+            "parts": [],
             "confidence": 1.0,
             "issues": [],
         })  # fmt: skip

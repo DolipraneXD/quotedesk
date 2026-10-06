@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.errors import ProblemError
 from app.models import Brand, BrandAlias, Import, ImportRow, PriceHistory, Product
 from app.services import catalog, search
+from app.services.importer import assembly
 from app.services.importer.matcher import FLAG_FIELDS
 from app.services.importer.normalize import brand_key
 
@@ -197,11 +198,13 @@ def commit_import(session: Session, imp: Import) -> dict[str, int]:
         raise ProblemError(
             409, "import.commit_failed", "Some rows could not be applied", errors=len(failures)
         )
+    linked = assembly.link_configurations(session, rows)
     imp.status = "committed"
     imp.committed_at = datetime.now(UTC)
     imp.stats = {
         **imp.stats,
         "committed": stats,
+        "configurations": linked,
         "created_brands": sorted(set(session.scalars(select(Brand.id))) - brands_before),
     }
     session.commit()
@@ -226,6 +229,7 @@ def revert_import(session: Session, imp: Import) -> None:
         raise ProblemError(
             409, "import.not_latest", "Revert the newer import first", newer_id=later
         )
+    assembly.unlink_configurations(session, (imp.stats or {}).get("configurations") or [])
     rows = list(
         session.scalars(
             select(ImportRow)

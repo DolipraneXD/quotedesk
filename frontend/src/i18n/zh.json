@@ -539,7 +539,9 @@
     "resetEdits": "撤销我的修改",
     "sourceImage": "来源图片",
     "imagePosition": "表格中从上往下第 {{n}} 行",
-    "zoomHint": "点击图片可放大"
+    "zoomHint": "点击图片可放大",
+    "unitConfigurations": "整机已连同部件保存为整机配置（{{count}} 个）：",
+    "openConfiguration": "整机配置 #{{id}}"
   },
   "issues": {
     "llm": "模型备注：{{text}}",
@@ -568,10 +570,18 @@
       "duplicate_in_import": "重复",
       "commit_failed": "失败",
       "erp_variant": "料号不同",
-      "erp_conflict": "料号冲突"
+      "erp_conflict": "料号冲突",
+      "assembly_unit": "整机",
+      "assembly_part": "部件",
+      "unit_fx": "整机汇率",
+      "parts_total": "部件合计不符"
     },
     "erp_variant": "规格与“{{product}}”相同，但 ERP料号不同：已作为单独产品保留",
-    "erp_conflict": "与“{{product}}”匹配到同一产品，但 ERP料号不同：已跳过。请修改规格或手动新建"
+    "erp_conflict": "与“{{product}}”匹配到同一产品，但 ERP料号不同：已跳过。请修改规格或手动新建",
+    "assembly_unit": "整机 {{unit}}：确认入库时会把它的部件保存为整机配置 {{unit}}",
+    "assembly_part": "{{unit}} 的部件：将加入该整机配置",
+    "unit_fx": "汇率 {{rate}} 取自 {{unit}} 行自身的人民币和美元成本（含税），部件合计等于整机美元成本",
+    "parts_total": "部件合计 ¥{{parts}}，但整机成本为 ¥{{unit}}：请对照原表核对部件金额"
   },
   "customer": {
     "new": "新建客户",
@@ -630,7 +640,6 @@
     "paymentTerms": "付款条件",
     "notesHeader": "表格上方备注",
     "notesFooter": "表格下方备注",
-    "manageCustomers": "添加客户",
     "validUntil": "有效期至 {{date}}",
     "preview": "预览",
     "customerVersion": "客户版",

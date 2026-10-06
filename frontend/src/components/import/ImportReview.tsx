@@ -16,6 +16,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
 import { useCategories } from '../../api/hooks'
 import {
@@ -245,6 +246,18 @@ export default function ImportReview({ record }: { record: ImportRecord }) {
           showIcon
           style={{ marginBottom: 12 }}
           message={t('review.committedSummary', stats.committed)}
+          description={
+            stats.configurations?.length ? (
+              <Space wrap>
+                {t('review.unitConfigurations', { count: stats.configurations.length })}
+                {stats.configurations.map((c) => (
+                  <Link key={c.id} to={`/configurations/${c.id}`}>
+                    {t('review.openConfiguration', { id: c.id })}
+                  </Link>
+                ))}
+              </Space>
+            ) : undefined
+          }
         />
       )}
       {record.status === 'reverted' && (

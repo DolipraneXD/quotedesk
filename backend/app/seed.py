@@ -54,6 +54,16 @@ EXTRA_SCHEMA = [
 
 GENERIC_SCHEMA = [MODEL, SPEC]
 
+# a complete unit; its parts are separate products, linked by a configuration
+UNIT_SCHEMA = [
+    MODEL,
+    f("cpu", "Platform / CPU", "平台"),
+    f("screen", "Screen", "屏"),
+    f("memory_config", "Memory / storage", "存储"),
+    f("market", "Market", "市场"),
+    SPEC,
+]
+
 SCHEMAS: dict[str, list[dict[str, Any]]] = {
     "ram_module": [
         f(
@@ -134,6 +144,7 @@ SCHEMAS: dict[str, list[dict[str, Any]]] = {
         f("streams", "Streams", "天线", options=["1T1R", "2T2R"]),
         f("vendor_module", "Module vendor", "模组厂商"),
     ],
+    "tablet": UNIT_SCHEMA,
     "motherboard": [
         f("model", "Model", "机型", fp=True),
         f("sku", "SKU", "SKU", fp=True),
@@ -185,6 +196,7 @@ CATEGORIES: list[tuple[str, str, str, bool]] = [
     ("cabinet", "Battery cabinet", "电池柜", False),
     ("service", "Service", "服务", False),
     ("other", "Other", "其他", False),
+    ("tablet", "Tablet", "平板电脑", True),
 ]
 
 # canonical, name_zh, extra aliases

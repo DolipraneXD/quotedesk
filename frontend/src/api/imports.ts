@@ -94,6 +94,8 @@ export interface ImportStats {
   total?: number
   to_apply?: number
   committed?: { new: number; updated: number; unchanged: number; skipped: number }
+  /** configurations created or refreshed from complete units (整机 BOMs) */
+  configurations?: { id: number; created: boolean }[]
 }
 
 export interface ImportRecord {
