@@ -1,5 +1,8 @@
 # Quotation System — Design Spec
 
+> **Superseded** by [docs/QUOTEDESK_PLAN.md](../../QUOTEDESK_PLAN.md) (single-user, local, Python/SQLite).
+> Kept for history only.
+
 **Date:** 2026-09-03
 **Status:** Approved for planning
 **Type:** Internal tool, greenfield

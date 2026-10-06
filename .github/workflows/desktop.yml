@@ -1,0 +1,49 @@
+name: Desktop build
+
+# Builds the Windows desktop folder (QuoteDesk.exe and its files) with PyInstaller.
+# Run it from the Actions tab, or push a tag like v1.0.0; the zip is attached to the run.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Build the interface
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Build QuoteDesk.exe
+        run: |
+          python -m pip install -r backend/requirements.txt "pyinstaller>=6.10"
+          python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/pyinstaller backend/packaging/quotedesk.spec
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $env:BROWSER = "none"
+          $p = Start-Process -FilePath dist/QuoteDesk/QuoteDesk.exe -ArgumentList "--port","8799" -PassThru
+          $ok = $false
+          foreach ($i in 1..60) {
+            try { Invoke-RestMethod http://127.0.0.1:8799/api/v1/health | Out-Null; $ok = $true; break } catch { Start-Sleep 1 }
+          }
+          Stop-Process $p.Id
+          if (-not $ok) { throw "QuoteDesk did not start" }
+          Remove-Item -Recurse -Force dist/QuoteDesk/data -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuoteDesk-windows
+          path: dist/QuoteDesk
